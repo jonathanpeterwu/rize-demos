@@ -1,0 +1,69 @@
+/* Rize Theme - CSS Variables for Tailwind Portability */
+
+:root {
+  /* Background colors */
+  --rize-bg: #111113;
+  --rize-bg-elevated: #141419;
+  --rize-bg-card: #1a1a1f;
+  --rize-bg-white: #ffffff;
+
+  /* Border colors */
+  --rize-border: rgba(255,255,255,0.1);
+  --rize-border-strong: rgba(255,255,255,0.2);
+  --rize-border-light: #e5e5e5;
+
+  /* Text colors */
+  --rize-text-primary: #ffffff;
+  --rize-text-secondary: #a1a1aa;
+  --rize-text-muted: #71717a;
+  --rize-text-faint: #52525b;
+  --rize-text-dark: #111111;
+  --rize-text-dark-muted: #666666;
+  --rize-text-dark-secondary: #333333;
+
+  /* Tier accent colors */
+  --tier-color: #a78bfa;
+  --tier-lite: #a78bfa;
+  --tier-pro: #a78bfa;
+  --tier-team: #a78bfa;
+  --tier-enterprise: #a78bfa;
+
+  /* Tier with opacity */
+  --tier-bg-10: rgba(167, 139, 250, 0.1);
+  --tier-bg-15: rgba(167, 139, 250, 0.15);
+  --tier-bg-20: rgba(167, 139, 250, 0.2);
+  --tier-border: rgba(167, 139, 250, 0.4);
+}
+
+/* Tier-specific overrides (set via JS) */
+[data-tier="lite"] { --tier-color: #a78bfa; }
+[data-tier="pro"] { --tier-color: #a78bfa; }
+[data-tier="team"] { --tier-color: #a78bfa; }
+[data-tier="enterprise"] { --tier-color: #a78bfa; }
+
+/* Utility classes using CSS variables */
+.bg-rize { background-color: var(--rize-bg); }
+.bg-rize-elevated { background-color: var(--rize-bg-elevated); }
+.bg-rize-card { background-color: var(--rize-bg-card); }
+.border-rize { border-color: var(--rize-border); }
+.border-rize-strong { border-color: var(--rize-border-strong); }
+.text-rize-secondary { color: var(--rize-text-secondary); }
+.text-rize-muted { color: var(--rize-text-muted); }
+.text-rize-faint { color: var(--rize-text-faint); }
+
+/* Tier-aware classes */
+.bg-tier { background-color: var(--tier-color); }
+.bg-tier-10 { background-color: var(--tier-bg-10); }
+.bg-tier-15 { background-color: var(--tier-bg-15); }
+.bg-tier-20 { background-color: var(--tier-bg-20); }
+.border-tier { border-color: var(--tier-border); }
+.text-tier { color: var(--tier-color); }
+
+/* Gradient backgrounds */
+.bg-tier-gradient {
+  background: linear-gradient(to bottom left, var(--tier-bg-15), var(--tier-bg-10), var(--rize-bg-elevated));
+}
+
+/* Interactive states */
+.hover\:bg-rize-elevated:hover { background-color: var(--rize-bg-elevated); }
+.hover\:border-tier:hover { border-color: var(--tier-border); }

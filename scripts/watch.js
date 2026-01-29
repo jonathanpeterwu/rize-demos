@@ -39,15 +39,21 @@ for (const dir of watchDirs) {
     const inputPath = path.join(dir, filename);
     const outputName = fileMapping[filename] || filename.replace('.jsx', '.html').toLowerCase();
 
-    console.log(`[${new Date().toLocaleTimeString()}] Changed: ${filename}`);
+    console.log(`\n[${new Date().toLocaleTimeString()}] Changed: ${filename}`);
+    console.log(`  Source: ${inputPath}`);
+    console.log(`  Output: ${outputName}`);
 
     try {
-      execSync(`node scripts/jsx-to-html.js "${inputPath}" "${outputName}"`, {
-        cwd: process.cwd(),
-        stdio: 'inherit'
+      const scriptPath = path.join(__dirname, 'jsx-to-html.js');
+      const result = execSync(`node "${scriptPath}" "${inputPath}" "${outputName}"`, {
+        cwd: path.join(__dirname, '..'),
+        encoding: 'utf8'
       });
+      console.log(`  ✓ Rebuilt successfully`);
+      if (result) console.log(`  ${result.trim()}`);
     } catch (error) {
-      console.error(`Failed to convert ${filename}`);
+      console.error(`  ✗ Failed to convert ${filename}`);
+      if (error.message) console.error(`  Error: ${error.message}`);
     }
   });
 }

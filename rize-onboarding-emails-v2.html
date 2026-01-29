@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rize - Onboarding Emails v2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            rize: { bg: '#111113', elevated: '#141419', card: '#1a1a1f' },
+            tier: { DEFAULT: '#a78bfa' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --tier-color: #a78bfa;
+      --tier-bg-10: rgba(167, 139, 250, 0.1);
+      --tier-bg-15: rgba(167, 139, 250, 0.15);
+      --tier-bg-20: rgba(167, 139, 250, 0.2);
+      --tier-border: rgba(167, 139, 250, 0.4);
+    }
+    body { margin: 0; background: #111113; font-family: ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .bg-tier { background-color: var(--tier-color); }
+    .bg-tier-10 { background-color: var(--tier-bg-10); }
+    .bg-tier-15 { background-color: var(--tier-bg-15); }
+    .bg-tier-20 { background-color: var(--tier-bg-20); }
+    .border-tier { border-color: var(--tier-border); }
+    .text-tier { color: var(--tier-color); }
+    .bg-tier-gradient { background: linear-gradient(to bottom left, var(--tier-bg-15), var(--tier-bg-10), #141419); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Update CSS variable when tier changes
+    const setTierColor = (tier) => {
+      const colors = { lite: '#a78bfa', pro: '#60a5fa', team: '#34d399', enterprise: '#f97316' };
+      const color = colors[tier] || '#a78bfa';
+      const r = parseInt(color.slice(1,3), 16);
+      const g = parseInt(color.slice(3,5), 16);
+      const b = parseInt(color.slice(5,7), 16);
+      document.documentElement.style.setProperty('--tier-color', color);
+      document.documentElement.style.setProperty('--tier-bg-10', `rgba(${r},${g},${b},0.1)`);
+      document.documentElement.style.setProperty('--tier-bg-15', `rgba(${r},${g},${b},0.15)`);
+      document.documentElement.style.setProperty('--tier-bg-20', `rgba(${r},${g},${b},0.2)`);
+      document.documentElement.style.setProperty('--tier-border', `rgba(${r},${g},${b},0.4)`);
+    };
+
+    function App() {
+      const [view, setView] = useState('emails');
+      const [selectedTier, setSelectedTier] = useState('lite');
+      const [selectedEmail, setSelectedEmail] = useState(0);
+
+      useEffect(() => { setTierColor(selectedTier); }, [selectedTier]);
+
+      return (
+        <div className="min-h-screen text-white antialiased bg-[#111113]">
+          {/* Nav */}
+          <div className="sticky top-0 z-50 border-b border-white/10 p-3 bg-[#111113]">
+            <div className="mx-auto max-w-5xl flex justify-center gap-2">
+              {['emails', 'checklist', 'timeline'].map(v => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-4 py-1.5 rounded-md text-sm capitalize transition-all ${view === v ? 'bg-zinc-200 text-black' : 'text-zinc-400 border border-white/10 hover:border-white/20'}`}>
+                  {v === 'emails' ? 'Email Preview' : v === 'checklist' ? 'In-App Checklist' : 'Timeline'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {view === 'emails' && <EmailPreview selectedTier={selectedTier} setSelectedTier={setSelectedTier} selectedEmail={selectedEmail} setSelectedEmail={setSelectedEmail} />}
+          {view === 'checklist' && <ChecklistView selectedTier={selectedTier} setSelectedTier={setSelectedTier} />}
+          {view === 'timeline' && <TimelineView selectedTier={selectedTier} setSelectedTier={setSelectedTier} />}
+        </div>
+      );
+    }
+
+    function TierSelector({ selectedTier, setSelectedTier, onTierChange }) {
+      const tiers = [
+        { id: 'lite', name: 'Lite', price: '$10/mo', desc: 'Productivity hacker' },
+        { id: 'pro', name: 'Pro', price: '$20/mo', desc: 'Freelancer/Consultant' },
+        { id: 'team', name: 'Teams', price: '$30/user/mo', desc: '2+ members' },
+        { id: 'enterprise', name: 'Enterprise', price: 'Custom', desc: '6+ members' }
+      ];
+      const handleSelect = (id) => { setSelectedTier(id); onTierChange?.(); };
+
+      return (
+        <div className="grid grid-cols-4 gap-1 mb-8">
+          {tiers.map(tier => (
+            <button key={tier.id} onClick={() => handleSelect(tier.id)}
+              className={`relative p-4 rounded-xl flex flex-col text-left transition-all ${selectedTier === tier.id ? 'bg-tier-gradient border border-tier' : 'bg-[#141419] border border-white/10 hover:border-white/20'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-medium text-white">{tier.name}</span>
+                {selectedTier === tier.id && <svg className="w-4 h-4 text-tier" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+              </div>
+              <span className={`text-xs ${selectedTier === tier.id ? 'text-tier' : 'text-zinc-500'}`}>{tier.price}</span>
+              <span className="text-xs mt-1 text-zinc-600">{tier.desc}</span>
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    function EmailPreview({ selectedTier, setSelectedTier, selectedEmail, setSelectedEmail }) {
+      const emails = {
+        lite: [
+          { day: 0, timing: 'Immediate', sender: 'Macgill', hasPhoto: true, subject: 'Welcome to Rize! Start tracking in 30 seconds', cta: 'Start Tracking', preview: `Hey Johnny,\n\nYou're in! Rize is the simplest way to understand where your time goes.\n\nHere's how to get started:\n\n1. Open the Rize web app\n2. Click "+ Add Time Entry"\n3. Log what you worked on today\n\nThat's it. No complex setup.\n\n— Macgill, CEO @ Rize` },
+          { day: 1, timing: 'Day 1', sender: 'Rize', hasPhoto: false, subject: 'Did you track your first hour?', cta: 'Log Your First Entry', preview: `Hey Johnny,\n\nQuick check-in: have you logged your first time entry yet?\n\nUsers who log their first entry within 24 hours are 3x more likely to build a lasting productivity habit.\n\n— The Rize Team` },
+          { day: 3, timing: 'Day 3', sender: 'Rize', hasPhoto: false, subject: '3 ways to stay focused today', cta: 'Try Focus Mode', preview: `Hey Johnny,\n\nNow that you're tracking time, let's help you protect it.\n\nRize includes built-in focus tools:\n\n• Focus Music — Curated playlists\n• Distraction Blocker — Block time-wasting sites\n• Break Reminders — Stay fresh\n\n— The Rize Team` },
+          { day: 7, timing: 'Day 7', sender: 'Rize', hasPhoto: false, subject: 'Your first week in review', cta: 'View Dashboard', preview: `Hey Johnny,\n\nYou've been tracking for a week!\n\nWhat you'll see:\n• Total hours tracked\n• Most productive times\n• Top categories\n\n— The Rize Team` },
+          { day: 13, timing: 'Day 13', sender: 'Macgill', hasPhoto: true, subject: 'Your trial ends tomorrow', cta: 'Continue Lite — $10/mo', preview: `Hey Johnny,\n\nYour 14-day trial ends tomorrow.\n\nYour card will be charged $10 to continue Lite.\n\n— Macgill, CEO @ Rize` }
+        ],
+        pro: [
+          { day: 0, timing: 'Immediate', sender: 'Macgill', hasPhoto: true, subject: 'Welcome to Rize Pro! Let AI track for you', cta: 'Download App', preview: `Hey Johnny,\n\nWelcome to Rize Pro — where AI does the time tracking for you.\n\nOnce installed, Rize runs quietly and automatically:\n• Tracks time in every app\n• Categorizes by project/client\n• Generates billable reports\n\n— Macgill, CEO @ Rize` },
+          { day: 1, timing: 'Day 1', sender: 'Rize', hasPhoto: false, subject: 'Your AI assistant is ready', cta: 'Enable Auto-Tracking', preview: `Hey Johnny,\n\nRize's AI can automatically categorize your work.\n\nPro users save 5+ hours/week on manual entry.\n\n— The Rize Team` },
+          { day: 3, timing: 'Day 3', sender: 'Rize', hasPhoto: false, subject: 'Add your first client', cta: 'Add Client', preview: `Hey Johnny,\n\nReady to track billable hours?\n\nUnlocks:\n• Billable vs non-billable\n• Per-client reports\n• Invoice export\n\n— The Rize Team` },
+          { day: 7, timing: 'Day 7', sender: 'Rize', hasPhoto: false, subject: 'Your billable hours report', cta: 'View Report', preview: `Hey Johnny,\n\nYour first billable hours summary is ready.\n\n— The Rize Team` },
+          { day: 13, timing: 'Day 13', sender: 'Macgill', hasPhoto: true, subject: 'Your Pro trial ends tomorrow', cta: 'Continue Pro', preview: `Hey Johnny,\n\nYour card will be charged $20 tomorrow.\n\n— Macgill, CEO @ Rize` }
+        ],
+        team: [
+          { day: 0, timing: 'Immediate', sender: 'Macgill', hasPhoto: true, subject: 'Your Rize Teams account is ready!', cta: 'Invite Team', preview: `Hey Johnny,\n\nYou're set up with Rize Teams!\n\nFirst step: Invite your team.\n\nWith 2+ members:\n• Team utilization dashboards\n• Project profitability reports\n• Auto weekly round-ups\n\n— Macgill, CEO @ Rize` },
+          { day: 1, timing: 'Day 1', sender: 'Rize', hasPhoto: false, subject: 'Your team dashboard is ready', cta: 'Open Dashboard', preview: `Hey Johnny,\n\nReal-time visibility into:\n• Who's working on what\n• Hours per team member\n• Project progress\n\n— The Rize Team` },
+          { day: 3, timing: 'Day 3', sender: 'Rize', hasPhoto: false, subject: 'See which projects are profitable', cta: 'View Profitability', preview: `Hey Johnny,\n\n"Are we making money on this project?"\n\nRize Teams answers automatically.\n\nAgencies recover avg $2,400/month.\n\n— The Rize Team` },
+          { day: 7, timing: 'Day 7', sender: 'Rize', hasPhoto: false, subject: 'Team utilization report', cta: 'View Report', preview: `Hey Johnny,\n\nHealthy utilization is 65-80%.\n\nHow does your team compare?\n\n— The Rize Team` },
+          { day: 10, timing: 'Day 10', sender: 'Macgill', hasPhoto: true, subject: 'Schedule onboarding call', cta: 'Book 25-min Call', preview: `Hey Johnny,\n\nWant help getting more value?\n\nTeams who take this call see 40% higher adoption.\n\n— Macgill, CEO @ Rize` },
+          { day: 13, timing: 'Day 13', sender: 'Macgill', hasPhoto: true, subject: 'Teams trial ends tomorrow', cta: 'Continue Teams', preview: `Hey Johnny,\n\nYour card will be charged $30/user.\n\n— Macgill, CEO @ Rize` }
+        ],
+        enterprise: [
+          { day: 0, timing: 'Immediate', sender: 'Macgill', hasPhoto: true, subject: "Let's set up Rize for your company", cta: 'Book Call', preview: `Hey Johnny,\n\nWith 6+ team members, you get:\n• Dedicated account manager\n• Custom integrations & API\n• White-labeling\n• Priority support\n\n— Macgill, CEO @ Rize` },
+          { day: 1, timing: 'Day 1', sender: 'Macgill', hasPhoto: true, subject: 'Quick question about your team', cta: 'Reply', preview: `Hey Johnny,\n\nA few questions:\n1. How many people?\n2. Current time tracking tools?\n3. Biggest pain point?\n\n— Macgill, CEO @ Rize` },
+          { day: 3, timing: 'Day 3', sender: 'CSM', hasPhoto: true, subject: 'Custom integrations', cta: 'Book Call', preview: `Hey Johnny,\n\nWe've built for enterprise:\n• SSO/SAML\n• Custom API\n• CRM sync\n• White-label\n\n— Sarah, Customer Success` },
+          { day: 7, timing: 'Day 7', sender: 'CSM', hasPhoto: true, subject: 'Your dedicated account manager', cta: 'Schedule Intro', preview: `Hey Johnny,\n\nI'll be your dedicated account manager.\n\nYou'll have direct access to me.\n\n— Sarah, Customer Success` }
+        ]
+      };
+
+      const currentEmails = emails[selectedTier];
+      const currentEmail = currentEmails[selectedEmail];
+
+      return (
+        <div className="mx-auto px-6 py-8 max-w-6xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Post-Signup Email Drip Campaign</h1>
+            <p className="text-sm text-zinc-400">Preview emails for each persona tier</p>
+          </div>
+
+          <TierSelector selectedTier={selectedTier} setSelectedTier={setSelectedTier} onTierChange={() => setSelectedEmail(0)} />
+
+          <div className="grid grid-cols-3 gap-6">
+            {/* Email List */}
+            <div className="col-span-1">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-medium text-zinc-500">Email Sequence</h3>
+                <span className="text-xs px-2 py-1 rounded bg-tier-20 text-tier">{currentEmails.length} emails</span>
+              </div>
+              <div className="space-y-2">
+                {currentEmails.map((email, index) => (
+                  <button key={index} onClick={() => setSelectedEmail(index)}
+                    className={`w-full text-left p-3 rounded-xl transition-all ${selectedEmail === index ? 'bg-tier-15 border border-tier' : 'bg-[#141419] border border-white/10 hover:border-white/20'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs px-2 py-0.5 rounded bg-tier-20 text-tier">{email.timing}</span>
+                      {email.hasPhoto && <span className="text-xs text-zinc-500">photo</span>}
+                    </div>
+                    <p className="text-sm text-white truncate">{email.subject}</p>
+                    <p className="text-xs mt-1 text-zinc-600">From: {email.sender}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Email Preview */}
+            <div className="col-span-2">
+              <div className="rounded-xl overflow-hidden bg-white">
+                <div className="p-4 border-b border-zinc-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold bg-tier">R</div>
+                    <div>
+                      <p className="text-sm font-medium text-zinc-900">{currentEmail.sender === 'Macgill' ? 'Macgill Hughes' : currentEmail.sender === 'CSM' ? 'Sarah Chen' : 'Rize'}</p>
+                      <p className="text-xs text-zinc-500">{currentEmail.sender === 'Macgill' ? 'macgill@rize.io' : currentEmail.sender === 'CSM' ? 'sarah@rize.io' : 'hello@rize.io'}</p>
+                    </div>
+                  </div>
+                  <p className="font-semibold text-zinc-900">{currentEmail.subject}</p>
+                </div>
+                <div className="p-6">
+                  {currentEmail.hasPhoto && (
+                    <div className="flex items-start gap-4 mb-6 p-4 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl bg-tier">{currentEmail.sender === 'Macgill' ? 'M' : 'S'}</div>
+                      <div>
+                        <p className="font-semibold text-sm text-zinc-900">{currentEmail.sender === 'Macgill' ? 'Macgill Hughes' : 'Sarah Chen'}</p>
+                        <p className="text-xs text-zinc-500">{currentEmail.sender === 'Macgill' ? 'CEO & Co-founder' : 'Customer Success'}</p>
+                      </div>
+                    </div>
+                  )}
+                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-zinc-700">{currentEmail.preview}</pre>
+                </div>
+                <div className="p-6 pt-0">
+                  <button className="px-6 py-3 rounded-md text-sm font-medium text-white bg-tier hover:opacity-90 transition-opacity">{currentEmail.cta} →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ChecklistView({ selectedTier, setSelectedTier }) {
+      const [completedSteps, setCompletedSteps] = useState([0]);
+      const checklists = {
+        lite: [
+          { label: 'Learn the basics', desc: 'Quick 2-min tour', skip: true },
+          { label: 'Log your first time entry', desc: 'Start tracking', skip: false },
+          { label: 'Try Focus Mode', desc: 'Music + blocker', skip: true },
+          { label: 'Set a daily goal', desc: 'Target hours', skip: true },
+          { label: 'View your dashboard', desc: 'See insights', skip: false }
+        ],
+        pro: [
+          { label: 'Download the app', desc: 'Mac or Windows', skip: false },
+          { label: 'Enable AI tracking', desc: 'Auto categorization', skip: false },
+          { label: 'Add your first client', desc: 'Track billable', skip: true },
+          { label: 'Connect integration', desc: 'ClickUp, Linear', skip: true },
+          { label: 'Review AI categories', desc: 'Train the AI', skip: false },
+          { label: 'Generate a report', desc: 'Export invoice', skip: true }
+        ],
+        team: [
+          { label: 'Invite your team', desc: 'Send invites', skip: false },
+          { label: 'Enable domain auto-join', desc: '@company.com', skip: true },
+          { label: 'Create first project', desc: 'Track by project', skip: false },
+          { label: 'Assign a client', desc: 'Link to clients', skip: true },
+          { label: 'View team dashboard', desc: "Everyone's time", skip: false },
+          { label: 'Check profitability', desc: 'Revenue vs cost', skip: false }
+        ],
+        enterprise: [
+          { label: 'Book onboarding call', desc: 'Meet Macgill', skip: false },
+          { label: 'Complete form', desc: 'Your needs', skip: false },
+          { label: 'Meet account manager', desc: 'Dedicated support', skip: false }
+        ]
+      };
+      const list = checklists[selectedTier];
+      const progress = Math.round((completedSteps.length / list.length) * 100);
+      const toggle = (i) => setCompletedSteps(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
+      useEffect(() => { setCompletedSteps([0]); }, [selectedTier]);
+
+      return (
+        <div className="mx-auto px-6 py-8 max-w-6xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">In-App Onboarding Checklist</h1>
+            <p className="text-sm text-zinc-400">Preview the checklist widget for each persona</p>
+          </div>
+          <TierSelector selectedTier={selectedTier} setSelectedTier={setSelectedTier} />
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-sm font-medium mb-4 text-zinc-500">Widget Preview</h3>
+              <div className="p-5 rounded-xl bg-[#1a1a1f] border border-white/10">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-medium text-white">Get started with Rize</h3>
+                  <span className="text-xs text-zinc-500">{completedSteps.length}/{list.length}</span>
+                </div>
+                <div className="h-1.5 rounded-full mb-5 bg-zinc-800">
+                  <div className="h-full rounded-full transition-all duration-300 bg-tier" style={{ width: `${progress}%` }} />
+                </div>
+                <div className="space-y-2">
+                  {list.map((item, i) => (
+                    <button key={i} onClick={() => toggle(i)} className="w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all hover:bg-white/5">
+                      <div className={`w-5 h-5 rounded flex items-center justify-center text-xs flex-shrink-0 transition-all ${completedSteps.includes(i) ? 'bg-tier text-white' : 'border border-white/20'}`}>
+                        {completedSteps.includes(i) && '✓'}
+                      </div>
+                      <div className="flex-1">
+                        <span className={`text-sm block ${completedSteps.includes(i) ? 'text-zinc-500 line-through' : 'text-white'}`}>{item.label}</span>
+                        <span className="text-xs text-zinc-600">{item.desc}</span>
+                      </div>
+                      {item.skip && !completedSteps.includes(i) && <span className="text-xs px-2 py-1 rounded bg-white/5 text-zinc-500">Skip</span>}
+                    </button>
+                  ))}
+                </div>
+                <button className="w-full mt-5 py-2.5 rounded-md text-sm font-medium text-white bg-tier hover:opacity-90 transition-opacity">Continue →</button>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium mb-4 text-zinc-500">Specification</h3>
+              <div className="p-5 rounded-xl bg-[#141419] border border-white/10">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="text-left py-2 font-medium text-zinc-500">#</th>
+                      <th className="text-left py-2 font-medium text-zinc-500">Step</th>
+                      <th className="text-left py-2 font-medium text-zinc-500">Required</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {list.map((item, i) => (
+                      <tr key={i} className="border-b border-white/5">
+                        <td className="py-2 text-white">{i + 1}</td>
+                        <td className="py-2 text-white">{item.label}</td>
+                        <td className="py-2">
+                          <span className={`text-xs px-2 py-0.5 rounded ${item.skip ? 'bg-white/5 text-zinc-500' : 'bg-tier-20 text-tier'}`}>{item.skip ? 'Optional' : 'Required'}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function TimelineView({ selectedTier, setSelectedTier }) {
+      const timelines = {
+        lite: [
+          { day: 0, emails: ['Welcome (photo)', 'Install reminder'], inApp: 'Checklist appears' },
+          { day: 1, emails: ['Activation check'], inApp: 'First entry prompt' },
+          { day: 3, emails: ['Focus features'], inApp: 'Focus mode nudge' },
+          { day: 7, emails: ['Week review'], inApp: 'Dashboard tour' },
+          { day: 13, emails: ['Trial end (photo)'], inApp: 'Upgrade modal' }
+        ],
+        pro: [
+          { day: 0, emails: ['Welcome (photo)', 'Download reminder'], inApp: 'Checklist appears' },
+          { day: 1, emails: ['AI tracking intro'], inApp: 'AI setup wizard' },
+          { day: 3, emails: ['Add client'], inApp: 'Client prompt' },
+          { day: 7, emails: ['Billable report'], inApp: 'Report tour' },
+          { day: 13, emails: ['Trial end (photo)'], inApp: 'Upgrade modal' }
+        ],
+        team: [
+          { day: 0, emails: ['Welcome (photo)', 'Download for team'], inApp: 'Checklist + invite' },
+          { day: 1, emails: ['Team dashboard'], inApp: 'Dashboard tour' },
+          { day: 3, emails: ['Profitability intro'], inApp: 'Profitability prompt' },
+          { day: 7, emails: ['Utilization report'], inApp: 'Report tour' },
+          { day: 10, emails: ['Onboarding call (photo)'], inApp: 'Calendar embed' },
+          { day: 13, emails: ['Trial end (photo)'], inApp: 'Upgrade modal' }
+        ],
+        enterprise: [
+          { day: 0, emails: ['Welcome (photo)'], inApp: 'Book call modal' },
+          { day: 1, emails: ['Qualification (photo)'], inApp: 'Form prompt' },
+          { day: 3, emails: ['Custom integrations'], inApp: 'Integration wizard' },
+          { day: 7, emails: ['Account manager intro'], inApp: 'CSM calendar' }
+        ]
+      };
+      const timeline = timelines[selectedTier];
+
+      return (
+        <div className="mx-auto px-6 py-8 max-w-6xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Email & In-App Timeline</h1>
+            <p className="text-sm text-zinc-400">See when emails and in-app messages trigger</p>
+          </div>
+          <TierSelector selectedTier={selectedTier} setSelectedTier={setSelectedTier} />
+          <div className="relative">
+            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-tier opacity-30" />
+            <div className="space-y-6">
+              {timeline.map((item, i) => (
+                <div key={i} className="relative flex gap-6">
+                  <div className="w-16 h-16 rounded-xl flex flex-col items-center justify-center flex-shrink-0 z-10 bg-tier-20 border border-tier">
+                    <span className="text-xs text-zinc-500">Day</span>
+                    <span className="text-xl font-bold text-tier">{item.day}</span>
+                  </div>
+                  <div className="flex-1 grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-[#141419] border border-white/10">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-medium text-zinc-500">EMAILS</span>
+                      </div>
+                      {item.emails.map((e, j) => <div key={j} className="text-sm text-white flex items-center gap-2"><span className="text-tier">•</span>{e}</div>)}
+                    </div>
+                    <div className="p-4 rounded-xl bg-[#141419] border border-white/10">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-medium text-zinc-500">IN-APP</span>
+                      </div>
+                      <div className="text-sm text-white flex items-center gap-2"><span className="text-tier">•</span>{item.inApp}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

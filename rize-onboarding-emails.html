@@ -3,363 +3,1161 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rize - Onboarding Emails</title>
+  <title>Rize Onboarding Emails</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>* { box-sizing: border-box; } body { margin: 0; padding: 0; background: #111113; font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; -webkit-font-smoothing: antialiased; }</style>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111113;
+      font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-    function App() {
-      const [view, setView] = useState('emails');
-      const [selectedTier, setSelectedTier] = useState('lite');
-      const [selectedEmail, setSelectedEmail] = useState(0);
+// Rize Post-Signup Email Preview Component
+// UI matches RizePricingOnboarding.jsx styling
 
-      return (
-        <div className="min-h-screen text-white antialiased" style={{ backgroundColor: '#111113' }}>
-          <div className="sticky top-0 z-50 border-b p-3" style={{ backgroundColor: '#111113', borderColor: 'rgba(255,255,255,0.1)' }}>
-            <div className="mx-auto max-w-5xl flex justify-center gap-2">
-              {['emails', 'checklist', 'timeline'].map(v => (
+function App() {
+  const [view, setView] = useState('emails');
+  const [selectedTier, setSelectedTier] = useState('lite');
+  const [selectedEmail, setSelectedEmail] = useState(0);
+
+  return (
+    <div className="min-h-screen text-white antialiased" style={{ backgroundColor: '#111113' }}>
+      {/* View Toggle - matches RizePricingOnboarding.jsx */}
+      <div className="sticky top-0 z-50 border-b p-3" style={{ backgroundColor: '#111113', borderColor: 'rgba(255,255,255,0.1)' }}>
+        <div className="mx-auto max-w-5xl flex justify-center gap-2">
+          {['emails', 'checklist', 'timeline'].map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className="px-4 py-1.5 rounded-md text-sm transition-all capitalize"
+              style={{
+                backgroundColor: view === v ? '#e4e4e7' : 'transparent',
+                color: view === v ? '#000' : '#a1a1aa',
+                border: view === v ? 'none' : '1px solid rgba(255,255,255,0.1)'
+              }}
+            >
+              {v === 'emails' ? 'Email Preview' : v === 'checklist' ? 'In-App Checklist' : 'Timeline'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {view === 'emails' && (
+        <EmailPreview
+          selectedTier={selectedTier}
+          setSelectedTier={setSelectedTier}
+          selectedEmail={selectedEmail}
+          setSelectedEmail={setSelectedEmail}
+        />
+      )}
+      {view === 'checklist' && (
+        <ChecklistView
+          selectedTier={selectedTier}
+          setSelectedTier={setSelectedTier}
+        />
+      )}
+      {view === 'timeline' && (
+        <TimelineView
+          selectedTier={selectedTier}
+          setSelectedTier={setSelectedTier}
+        />
+      )}
+    </div>
+  );
+}
+
+// ==========================================
+// TIER SELECTOR COMPONENT
+// ==========================================
+function TierSelector({ selectedTier, setSelectedTier, onTierChange }) {
+  const tierColors = {
+    lite: '#a78bfa',
+    pro: '#a78bfa',
+    team: '#a78bfa',
+    enterprise: '#a78bfa'
+  };
+
+  const tierData = [
+    { id: 'lite', name: 'Lite', price: '$10/mo', desc: 'Productivity hacker' },
+    { id: 'pro', name: 'Pro', price: '$20/mo', desc: 'Freelancer/Consultant' },
+    { id: 'team', name: 'Teams', price: '$30/user/mo', desc: '2+ members' },
+    { id: 'enterprise', name: 'Enterprise', price: 'Custom', desc: '6+ members' }
+  ];
+
+  const handleSelect = (tierId) => {
+    setSelectedTier(tierId);
+    if (onTierChange) onTierChange();
+  };
+
+  return (
+    <div className="grid grid-cols-4 gap-1 mb-8">
+      {tierData.map(tier => {
+        const isSelected = selectedTier === tier.id;
+        const color = tierColors[tier.id];
+
+        return (
+          <button
+            key={tier.id}
+            onClick={() => handleSelect(tier.id)}
+            className="relative p-4 rounded-xl flex flex-col text-left transition-all"
+            style={{
+              backgroundColor: isSelected ? undefined : '#141419',
+              background: isSelected ? `linear-gradient(to bottom left, ${color}15, ${color}08, #14111c)` : undefined,
+              border: isSelected ? `1px solid ${color}40` : '1px solid rgba(255,255,255,0.1)'
+            }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-medium text-white">{tier.name}</span>
+              {isSelected && (
+                <svg className="w-4 h-4" style={{ color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <span className="text-xs" style={{ color: isSelected ? color : '#71717a' }}>{tier.price}</span>
+            <span className="text-xs mt-1" style={{ color: '#52525b' }}>{tier.desc}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ==========================================
+// EMAIL PREVIEW VIEW
+// ==========================================
+function EmailPreview({ selectedTier, setSelectedTier, selectedEmail, setSelectedEmail }) {
+  const tierColors = {
+    lite: '#a78bfa',
+    pro: '#a78bfa',
+    team: '#a78bfa',
+    enterprise: '#a78bfa'
+  };
+
+  const emails = {
+    lite: [
+      {
+        day: 0,
+        timing: 'Immediate',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: 'Welcome to Rize, {name}! Start tracking in 30 seconds',
+        cta: 'Start Tracking →',
+        preview: `Hey {first_name},
+
+You're in! Rize is the simplest way to understand where your time goes.
+
+Here's how to get started:
+
+1. Open the Rize web app
+2. Click "+ Add Time Entry"
+3. Log what you worked on today
+
+That's it. No complex setup. Your 14-day trial has begun.
+
+[Start Tracking →]
+
+Quick tip: Most users see their biggest productivity insights after just 3 days of tracking.
+
+— Macgill, CEO @ Rize`
+      },
+      {
+        day: 1,
+        timing: 'Day 1',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Did you track your first hour?',
+        cta: 'Log Your First Entry →',
+        preview: `Hey {first_name},
+
+Quick check-in: have you logged your first time entry yet?
+
+If not, here's a 30-second challenge:
+→ Think about what you worked on in the last hour
+→ Open Rize and log it
+
+[Log Your First Entry →]
+
+Why this matters: Users who log their first entry within 24 hours are 3x more likely to build a lasting productivity habit.
+
+Already tracking? Nice work! Keep it up.
+
+— The Rize Team`
+      },
+      {
+        day: 3,
+        timing: 'Day 3',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: '3 ways to stay focused today',
+        cta: 'Try Focus Mode →',
+        preview: `Hey {first_name},
+
+Now that you're tracking time, let's help you protect it.
+
+Rize includes built-in focus tools:
+
+🎵 Focus Music — Curated playlists for deep work
+🚫 Distraction Blocker — Block time-wasting sites
+⏰ Break Reminders — Stay fresh, avoid burnout
+
+[Try Focus Mode →]
+
+These features are included in your trial. Give one a try today.
+
+— The Rize Team`
+      },
+      {
+        day: 7,
+        timing: 'Day 7',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Your first week in review',
+        cta: 'View Your Dashboard →',
+        preview: `Hey {first_name},
+
+You've been tracking for a week — here's what Rize has learned about your work patterns.
+
+[View Your Dashboard →]
+
+What you'll see:
+• Total hours tracked this week
+• Your most productive times of day
+• Categories where you spend the most time
+
+This is just the beginning. One more week to unlock even deeper insights.
+
+— The Rize Team`
+      },
+      {
+        day: 13,
+        timing: 'Day 13 (Trial End)',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: "Your trial ends tomorrow — here's what you've built",
+        cta: 'Continue Lite — $10/mo →',
+        preview: `Hey {first_name},
+
+Your 14-day Rize trial ends tomorrow.
+
+Here's what you've accomplished:
+• {hours_tracked} hours tracked
+• {entries_count} time entries logged
+• Top category: {top_category}
+
+Your card will be charged $10 tomorrow to continue Lite. To keep your data and continue tracking, no action needed.
+
+[Manage Subscription →]
+
+Want to cancel? No hard feelings — you can cancel anytime from account settings.
+
+— Macgill, CEO @ Rize`
+      }
+    ],
+    pro: [
+      {
+        day: 0,
+        timing: 'Immediate',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: 'Welcome to Rize Pro! Let AI track for you',
+        cta: 'Download for Mac →',
+        preview: `Hey {first_name},
+
+Welcome to Rize Pro — where AI does the time tracking for you.
+
+Your first step: Download the Rize desktop app
+
+[Download for Mac →]  [Download for Windows →]
+
+Once installed, Rize runs quietly in the background and automatically:
+• Tracks time spent in every app
+• Categorizes work by project and client
+• Generates billable hours reports
+
+No more manual timers. No more forgotten hours.
+
+— Macgill, CEO @ Rize`
+      },
+      {
+        day: 0,
+        timing: '+2 hours',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Download Rize — AI starts tracking in 60 seconds',
+        cta: 'Download Now →',
+        preview: `Hey {first_name},
+
+Haven't downloaded the app yet? Here's your link:
+
+[Download for Mac →]  [Download for Windows →]
+
+Pro tip: Once installed, Rize runs in your menu bar. You can forget it's there — it just works.
+
+— The Rize Team`
+      },
+      {
+        day: 1,
+        timing: 'Day 1',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Your AI assistant is ready',
+        cta: 'Enable Auto-Tracking →',
+        preview: `Hey {first_name},
+
+Did you know? Rize's AI can automatically categorize your work — no manual tagging needed.
+
+Here's how it works:
+
+1. You work normally (emails, Figma, VS Code, meetings)
+2. Rize watches and learns your patterns
+3. AI assigns each session to the right project/client
+
+[Enable Auto-Tracking →]
+
+Pro users save an average of 5+ hours per week on manual time entry.
+
+— The Rize Team`
+      },
+      {
+        day: 3,
+        timing: 'Day 3',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Add your first client in 2 minutes',
+        cta: 'Add a Client →',
+        preview: `Hey {first_name},
+
+Ready to track billable hours? Let's set up your first client.
+
+[Add a Client →]
+
+Here's what unlocks:
+✓ Automatic billable vs. non-billable separation
+✓ Per-client time reports
+✓ One-click invoice data export
+
+Most freelancers discover 2-3 hours of "lost" billable time in their first week.
+
+— The Rize Team`
+      },
+      {
+        day: 7,
+        timing: 'Day 7',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Your billable hours report is ready',
+        cta: 'View Billable Report →',
+        preview: `Hey {first_name},
+
+You've been tracking for a week. Here's your first billable hours summary:
+
+[View Billable Report →]
+
+What's inside:
+• Hours by client (billable vs. internal)
+• Project breakdown
+• Ready-to-export invoice data
+
+Pro tip: Share this report directly with clients to build trust.
+
+— The Rize Team`
+      },
+      {
+        day: 13,
+        timing: 'Day 13 (Trial End)',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: 'Your Pro trial ends tomorrow',
+        cta: 'Continue Rize Pro →',
+        preview: `Hey {first_name},
+
+Your 14-day Rize Pro trial ends tomorrow.
+
+Your Pro stats:
+• {hours_tracked} hours auto-tracked
+• {billable_hours} billable hours captured
+• {clients_count} clients set up
+• Estimated value recovered: \${estimated_value}
+
+Your card will be charged $20 tomorrow to continue Pro.
+
+[Manage Subscription →]
+
+Questions? Reply to this email — we're here to help.
+
+— Macgill, CEO @ Rize`
+      }
+    ],
+    team: [
+      {
+        day: 0,
+        timing: 'Immediate',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: 'Your Rize Teams account is ready, {name}!',
+        cta: 'Invite Team Members →',
+        preview: `Hey {first_name},
+
+You're set up with Rize Teams — time tracking that shows you where your team's time actually goes.
+
+Your first step: Invite your team
+
+[Invite Team Members →]
+
+Pro tip: Enable domain auto-join so anyone with @{domain} can join automatically.
+
+What you'll unlock with 2+ members:
+✓ Team utilization dashboards
+✓ Project profitability reports
+✓ Automatic weekly round-ups
+
+Teams that onboard together see results 200% faster.
+
+— Macgill, CEO @ Rize`
+      },
+      {
+        day: 0,
+        timing: '+2 hours',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Download Rize for your team',
+        cta: 'Download Now →',
+        preview: `Hey {first_name},
+
+To get the most out of Rize Teams, make sure everyone downloads the desktop app.
+
+[Download for Mac →]  [Download for Windows →]
+
+Share this link with your team for easy setup.
+
+— The Rize Team`
+      },
+      {
+        day: 1,
+        timing: 'Day 1',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Your team dashboard is ready',
+        cta: 'Open Team Dashboard →',
+        preview: `Hey {first_name},
+
+Your Rize Teams dashboard is live. Here's what you can see:
+
+[Open Team Dashboard →]
+
+Real-time visibility into:
+• Who's working on what right now
+• Hours logged per team member
+• Project progress at a glance
+
+No more Slack check-ins or status meetings just to know what's happening.
+
+— The Rize Team`
+      },
+      {
+        day: 3,
+        timing: 'Day 3',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'See which projects are actually profitable',
+        cta: 'Open Profitability Dashboard →',
+        preview: `Hey {first_name},
+
+Here's the question every agency owner asks: "Are we actually making money on this project?"
+
+Rize Teams answers it automatically.
+
+[Open Profitability Dashboard →]
+
+What you'll see:
+• Revenue vs. time cost per project
+• Profit margin by client
+• Which projects are bleeding hours
+
+This report has helped agencies recover an average of $2,400/month.
+
+— The Rize Team`
+      },
+      {
+        day: 7,
+        timing: 'Day 7',
+        sender: 'Rize',
+        hasPhoto: false,
+        subject: 'Your first team utilization report',
+        cta: 'View Utilization Report →',
+        preview: `Hey {first_name},
+
+Your team has been tracking for a week. Here's your utilization summary:
+
+[View Utilization Report →]
+
+Key metrics:
+• Team-wide utilization rate
+• Billable vs. non-billable split
+• Individual member breakdown
+
+Healthy agency utilization is typically 65-80%. How does your team compare?
+
+— The Rize Team`
+      },
+      {
+        day: 10,
+        timing: 'Day 10',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: 'Schedule your team onboarding call',
+        cta: 'Schedule a 25-min Call →',
+        preview: `Hey {first_name},
+
+You've been using Rize Teams for 10 days. Want help getting even more value?
+
+[Schedule a 25-min Onboarding Call →]
+
+In this call, we'll:
+• Review your team's setup
+• Optimize your profitability dashboards
+• Answer any questions
+
+This call is free — teams who take it see 40% higher adoption.
+
+— Macgill, CEO @ Rize`
+      },
+      {
+        day: 13,
+        timing: 'Day 13 (Trial End)',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: 'Your Teams trial ends tomorrow',
+        cta: 'Continue Rize Teams →',
+        preview: `Hey {first_name},
+
+Your Rize Teams trial ends tomorrow.
+
+Your team's results:
+• {team_members} team members active
+• {total_hours} hours tracked
+• {billable_hours} billable hours captured
+• {projects_count} projects tracked
+
+Estimated monthly value: \${estimated_value}
+
+Your card will be charged $30/user tomorrow to continue Teams.
+
+[Manage Subscription →]
+
+Questions about billing or team setup? Reply here.
+
+— Macgill, CEO @ Rize`
+      }
+    ],
+    enterprise: [
+      {
+        day: 0,
+        timing: 'Immediate',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: "Let's set up Rize for {company}",
+        cta: 'Book a 25-min Call →',
+        preview: `Hey {first_name},
+
+Thanks for your interest in Rize Enterprise.
+
+With 6+ team members, you'll benefit from:
+• Dedicated account manager
+• Custom integrations & API access
+• White-labeling options
+• Priority support
+
+Let's schedule a quick call to understand your needs:
+
+[Book a 25-min Call with Macgill (CEO) →]
+
+We'll discuss:
+• Your team's workflow
+• Integration requirements
+• Custom pricing
+
+Talk soon.
+
+— Macgill, CEO @ Rize`
+      },
+      {
+        day: 1,
+        timing: 'Day 1',
+        sender: 'Macgill',
+        hasPhoto: true,
+        subject: 'Quick question about your team',
+        cta: 'Reply',
+        preview: `Hey {first_name},
+
+Quick follow-up: I'd love to learn more about your team before our call.
+
+A few questions:
+1. How many people will be using Rize?
+2. What tools does your team currently use for time tracking?
+3. What's your biggest pain point with your current setup?
+
+Hit reply and let me know — it'll help me prepare a more relevant demo.
+
+— Macgill, CEO @ Rize`
+      },
+      {
+        day: 3,
+        timing: 'Day 3',
+        sender: 'CSM',
+        hasPhoto: true,
+        subject: 'Custom integrations for {company}',
+        cta: 'Book Call →',
+        preview: `Hey {first_name},
+
+I wanted to share some of the custom integrations we've built for enterprise teams like yours:
+
+• SSO/SAML for secure authentication
+• Custom API for internal tools
+• Salesforce/HubSpot CRM sync
+• Custom reporting dashboards
+• White-label options
+
+[Book a Call to Discuss →]
+
+We can build almost anything your team needs. Let's talk.
+
+— {csm_name}, Customer Success @ Rize`
+      },
+      {
+        day: 7,
+        timing: 'Day 7',
+        sender: 'CSM',
+        hasPhoto: true,
+        subject: 'Your dedicated account manager',
+        cta: 'Schedule Intro Call →',
+        preview: `Hey {first_name},
+
+I wanted to introduce myself — I'll be your dedicated account manager at Rize.
+
+I specialize in helping enterprise teams like yours:
+• Onboard large teams efficiently
+• Set up custom integrations
+• Optimize workflows for maximum ROI
+
+[Schedule an Intro Call →]
+
+You'll have direct access to me for any questions or support needs.
+
+— {csm_name}, Customer Success @ Rize`
+      }
+    ]
+  };
+
+  const tierColor = tierColors[selectedTier];
+  const currentEmails = emails[selectedTier];
+  const currentEmail = currentEmails[selectedEmail];
+
+  return (
+    <div className="mx-auto px-6 py-8" style={{ maxWidth: '1200px' }}>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Post-Signup Email Drip Campaign</h1>
+        <p className="text-sm" style={{ color: '#a1a1aa' }}>Preview emails for each persona tier</p>
+      </div>
+
+      {/* Tier Selector */}
+      <TierSelector
+        selectedTier={selectedTier}
+        setSelectedTier={setSelectedTier}
+        onTierChange={() => setSelectedEmail(0)}
+      />
+
+      <div className="grid grid-cols-3 gap-6">
+        {/* Email List */}
+        <div className="col-span-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium" style={{ color: '#71717a' }}>Email Sequence</h3>
+            <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: `${tierColor}20`, color: tierColor }}>
+              {currentEmails.length} emails
+            </span>
+          </div>
+          <div className="space-y-2">
+            {currentEmails.map((email, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedEmail(index)}
+                className="w-full text-left p-3 rounded-xl transition-all"
+                style={{
+                  backgroundColor: selectedEmail === index ? `${tierColor}15` : '#141419',
+                  border: selectedEmail === index ? `1px solid ${tierColor}40` : '1px solid rgba(255,255,255,0.1)'
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className="text-xs px-2 py-0.5 rounded"
+                    style={{ backgroundColor: `${tierColor}20`, color: tierColor }}
+                  >
+                    {email.timing}
+                  </span>
+                  {email.hasPhoto && (
+                    <span className="text-xs" style={{ color: '#71717a' }}>📸</span>
+                  )}
+                </div>
+                <p className="text-sm text-white truncate">{email.subject.replace('{name}', 'Johnny')}</p>
+                <p className="text-xs mt-1" style={{ color: '#52525b' }}>From: {email.sender}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Email Preview */}
+        <div className="col-span-2">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#fff' }}>
+            {/* Email Header */}
+            <div className="p-4" style={{ borderBottom: '1px solid #e5e5e5' }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                  style={{ backgroundColor: tierColor }}
+                >
+                  R
+                </div>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#111' }}>
+                    {currentEmail.sender === 'Macgill' ? 'Macgill Hughes' :
+                     currentEmail.sender === 'CSM' ? 'Sarah Chen (CSM)' : 'Rize'}
+                  </p>
+                  <p className="text-xs" style={{ color: '#666' }}>
+                    {currentEmail.sender === 'Macgill' ? 'macgill@rize.io' :
+                     currentEmail.sender === 'CSM' ? 'sarah@rize.io' : 'hello@rize.io'}
+                  </p>
+                </div>
+              </div>
+              <p className="font-semibold" style={{ color: '#111' }}>
+                {currentEmail.subject.replace('{name}', 'Johnny').replace('{company}', 'Acme Inc')}
+              </p>
+            </div>
+
+            {/* Email Body */}
+            <div className="p-6">
+              {/* Inline Photo Block - Ramp style */}
+              {currentEmail.hasPhoto && (
+                <div className="flex items-start gap-4 mb-6 p-4 rounded-lg" style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
+                    style={{ backgroundColor: currentEmail.sender === 'Macgill' ? '#a78bfa' : '#60a5fa' }}
+                  >
+                    {currentEmail.sender === 'Macgill' ? 'M' : 'S'}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: '#111' }}>
+                      {currentEmail.sender === 'Macgill' ? 'Macgill Hughes' : 'Sarah Chen'}
+                    </p>
+                    <p className="text-xs" style={{ color: '#666' }}>
+                      {currentEmail.sender === 'Macgill' ? 'CEO & Co-founder' : 'Customer Success Manager'}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: '#a78bfa' }}>
+                      {currentEmail.sender === 'Macgill' ? 'macgill@rize.io' : 'sarah@rize.io'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <pre
+                className="whitespace-pre-wrap font-sans text-sm leading-relaxed"
+                style={{ color: '#333', fontFamily: 'system-ui, -apple-system, sans-serif' }}
+              >
+                {currentEmail.preview
+                  .replace(/{first_name}/g, 'Johnny')
+                  .replace(/{domain}/g, 'acme.com')
+                  .replace(/{company}/g, 'Acme Inc')
+                  .replace(/{csm_name}/g, 'Sarah')
+                }
+              </pre>
+            </div>
+
+            {/* CTA Button Preview */}
+            <div className="p-6 pt-0">
+              <button
+                className="px-6 py-3 rounded-md text-sm font-medium"
+                style={{ backgroundColor: tierColor, color: '#fff' }}
+              >
+                {currentEmail.cta}
+              </button>
+            </div>
+          </div>
+
+          {/* Email Metadata */}
+          <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <h4 className="text-xs font-medium mb-3" style={{ color: '#71717a' }}>Email Details</h4>
+            <div className="grid grid-cols-4 gap-4 text-sm">
+              <div>
+                <span style={{ color: '#52525b' }}>Day: </span>
+                <span className="text-white">{currentEmail.day}</span>
+              </div>
+              <div>
+                <span style={{ color: '#52525b' }}>Sender: </span>
+                <span className="text-white">{currentEmail.sender}</span>
+              </div>
+              <div>
+                <span style={{ color: '#52525b' }}>Photo: </span>
+                <span className="text-white">{currentEmail.hasPhoto ? 'Yes' : 'No'}</span>
+              </div>
+              <div>
+                <span style={{ color: '#52525b' }}>Tier: </span>
+                <span style={{ color: tierColor }}>{selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// IN-APP CHECKLIST VIEW
+// ==========================================
+function ChecklistView({ selectedTier, setSelectedTier }) {
+  const [completedSteps, setCompletedSteps] = useState([0]);
+
+  const tierColors = {
+    lite: '#a78bfa',
+    pro: '#a78bfa',
+    team: '#a78bfa',
+    enterprise: '#a78bfa'
+  };
+
+  const checklists = {
+    lite: [
+      { label: 'Learn the basics', desc: 'Quick 2-min tour', skip: true },
+      { label: 'Log your first time entry', desc: 'Start tracking', skip: false },
+      { label: 'Try Focus Mode', desc: 'Music + distraction blocker', skip: true },
+      { label: 'Set a daily goal', desc: 'Target hours per day', skip: true },
+      { label: 'View your dashboard', desc: 'See your insights', skip: false }
+    ],
+    pro: [
+      { label: 'Download the app', desc: 'Mac or Windows', skip: false },
+      { label: 'Enable AI tracking', desc: 'Automatic categorization', skip: false },
+      { label: 'Add your first client', desc: 'Track billable hours', skip: true },
+      { label: 'Connect an integration', desc: 'ClickUp, Linear, etc.', skip: true },
+      { label: 'Review AI categorization', desc: 'Train the AI', skip: false },
+      { label: 'Generate a report', desc: 'Export to invoice', skip: true }
+    ],
+    team: [
+      { label: 'Invite your team', desc: 'Send invites', skip: false },
+      { label: 'Enable domain auto-join', desc: '@company.com joins', skip: true },
+      { label: 'Create your first project', desc: 'Track time by project', skip: false },
+      { label: 'Assign a client', desc: 'Link projects to clients', skip: true },
+      { label: 'View team dashboard', desc: 'See everyone\'s time', skip: false },
+      { label: 'Check profitability report', desc: 'Revenue vs. cost', skip: false },
+      { label: 'Set up auto-reports', desc: 'Weekly summaries', skip: true }
+    ],
+    enterprise: [
+      { label: 'Book onboarding call', desc: 'Meet with Macgill', skip: false },
+      { label: 'Complete qualification form', desc: 'Tell us your needs', skip: false },
+      { label: 'Meet your account manager', desc: 'Dedicated support', skip: false }
+    ]
+  };
+
+  const tierColor = tierColors[selectedTier];
+  const currentChecklist = checklists[selectedTier];
+  const progress = Math.round((completedSteps.length / currentChecklist.length) * 100);
+
+  const toggleStep = (index) => {
+    if (completedSteps.includes(index)) {
+      setCompletedSteps(completedSteps.filter(i => i !== index));
+    } else {
+      setCompletedSteps([...completedSteps, index]);
+    }
+  };
+
+  // Reset completed steps when tier changes
+  useEffect(() => {
+    setCompletedSteps([0]);
+  }, [selectedTier]);
+
+  return (
+    <div className="mx-auto px-6 py-8" style={{ maxWidth: '1200px' }}>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">In-App Onboarding Checklist</h1>
+        <p className="text-sm" style={{ color: '#a1a1aa' }}>Preview the checklist widget for each persona</p>
+      </div>
+
+      {/* Tier Selector */}
+      <TierSelector selectedTier={selectedTier} setSelectedTier={setSelectedTier} />
+
+      <div className="grid grid-cols-2 gap-8">
+        {/* Checklist Preview */}
+        <div>
+          <h3 className="text-sm font-medium mb-4" style={{ color: '#71717a' }}>Widget Preview</h3>
+          <div className="p-5 rounded-xl" style={{ backgroundColor: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-medium text-white">Get started with Rize</h3>
+              <span className="text-xs" style={{ color: '#71717a' }}>{completedSteps.length}/{currentChecklist.length}</span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="h-1.5 rounded-full mb-5" style={{ backgroundColor: '#2a2a2f' }}>
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${progress}%`, backgroundColor: tierColor }}
+              />
+            </div>
+
+            {/* Checklist Items */}
+            <div className="space-y-2">
+              {currentChecklist.map((item, index) => (
                 <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className="px-4 py-1.5 rounded-md text-sm transition-all capitalize"
+                  key={index}
+                  onClick={() => toggleStep(index)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all hover:bg-white/5"
                   style={{
-                    backgroundColor: view === v ? '#e4e4e7' : 'transparent',
-                    color: view === v ? '#000' : '#a1a1aa',
-                    border: view === v ? 'none' : '1px solid rgba(255,255,255,0.1)'
+                    backgroundColor: completedSteps.includes(index) ? 'rgba(255,255,255,0.02)' : 'transparent'
                   }}
                 >
-                  {v === 'emails' ? 'Email Preview' : v === 'checklist' ? 'In-App Checklist' : 'Timeline'}
+                  <div
+                    className="w-5 h-5 rounded flex items-center justify-center text-xs flex-shrink-0 transition-all"
+                    style={{
+                      backgroundColor: completedSteps.includes(index) ? tierColor : 'transparent',
+                      border: completedSteps.includes(index) ? 'none' : '1px solid rgba(255,255,255,0.2)'
+                    }}
+                  >
+                    {completedSteps.includes(index) && '✓'}
+                  </div>
+                  <div className="flex-1">
+                    <span
+                      className="text-sm block"
+                      style={{
+                        color: completedSteps.includes(index) ? '#71717a' : '#fff',
+                        textDecoration: completedSteps.includes(index) ? 'line-through' : 'none'
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                    <span className="text-xs" style={{ color: '#52525b' }}>{item.desc}</span>
+                  </div>
+                  {item.skip && !completedSteps.includes(index) && (
+                    <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#71717a' }}>
+                      Skip
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
+
+            {/* Continue Button */}
+            <button
+              className="w-full mt-5 py-2.5 rounded-md text-sm font-medium transition-all"
+              style={{ backgroundColor: tierColor, color: '#fff' }}
+            >
+              Continue →
+            </button>
           </div>
-
-          {view === 'emails' && (
-            <EmailPreview
-              selectedTier={selectedTier}
-              setSelectedTier={setSelectedTier}
-              selectedEmail={selectedEmail}
-              setSelectedEmail={setSelectedEmail}
-            />
-          )}
-          {view === 'checklist' && (
-            <ChecklistView
-              selectedTier={selectedTier}
-              setSelectedTier={setSelectedTier}
-            />
-          )}
-          {view === 'timeline' && (
-            <TimelineView
-              selectedTier={selectedTier}
-              setSelectedTier={setSelectedTier}
-            />
-          )}
         </div>
-      );
-    }
 
-    function TierSelector({ selectedTier, setSelectedTier, onTierChange }) {
-      const tierColors = { lite: '#a78bfa', pro: '#a78bfa', team: '#a78bfa', enterprise: '#a78bfa' };
-      const tierData = [
-        { id: 'lite', name: 'Lite', price: '$10/mo', desc: 'Productivity hacker' },
-        { id: 'pro', name: 'Pro', price: '$20/mo', desc: 'Freelancer/Consultant' },
-        { id: 'team', name: 'Teams', price: '$30/user/mo', desc: '2+ members' },
-        { id: 'enterprise', name: 'Enterprise', price: 'Custom', desc: '6+ members' }
-      ];
-      const handleSelect = (tierId) => { setSelectedTier(tierId); if (onTierChange) onTierChange(); };
-      return (
-        <div className="grid grid-cols-4 gap-1 mb-8">
-          {tierData.map(tier => {
-            const isSelected = selectedTier === tier.id;
-            const color = tierColors[tier.id];
-            return (
-              <button key={tier.id} onClick={() => handleSelect(tier.id)} className="relative p-4 rounded-xl flex flex-col text-left transition-all" style={{ backgroundColor: isSelected ? undefined : '#141419', background: isSelected ? `linear-gradient(to bottom left, ${color}15, ${color}08, #14111c)` : undefined, border: isSelected ? `1px solid ${color}40` : '1px solid rgba(255,255,255,0.1)' }}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-white">{tier.name}</span>
-                  {isSelected && <svg className="w-4 h-4" style={{ color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                </div>
-                <span className="text-xs" style={{ color: isSelected ? color : '#71717a' }}>{tier.price}</span>
-                <span className="text-xs mt-1" style={{ color: '#52525b' }}>{tier.desc}</span>
-              </button>
-            );
-          })}
-        </div>
-      );
-    }
-
-    function EmailPreview({ selectedTier, setSelectedTier, selectedEmail, setSelectedEmail }) {
-      const tierColors = { lite: '#a78bfa', pro: '#a78bfa', team: '#a78bfa', enterprise: '#a78bfa' };
-      const emails = {
-        lite: [
-          { day: 0, timing: 'Immediate', sender: 'Macgill', hasPhoto: true, subject: 'Welcome to Rize, {name}! Start tracking in 30 seconds', cta: 'Start Tracking', preview: `Hey {first_name},\n\nYou're in! Rize is the simplest way to understand where your time goes.\n\nHere's how to get started:\n\n1. Open the Rize web app\n2. Click "+ Add Time Entry"\n3. Log what you worked on today\n\nThat's it. No complex setup. Your 14-day trial has begun.\n\nQuick tip: Most users see their biggest productivity insights after just 3 days of tracking.\n\n— Macgill, CEO @ Rize` },
-          { day: 1, timing: 'Day 1', sender: 'Rize', hasPhoto: false, subject: 'Did you track your first hour?', cta: 'Log Your First Entry', preview: `Hey {first_name},\n\nQuick check-in: have you logged your first time entry yet?\n\nIf not, here's a 30-second challenge:\n→ Think about what you worked on in the last hour\n→ Open Rize and log it\n\nWhy this matters: Users who log their first entry within 24 hours are 3x more likely to build a lasting productivity habit.\n\nAlready tracking? Nice work! Keep it up.\n\n— The Rize Team` },
-          { day: 3, timing: 'Day 3', sender: 'Rize', hasPhoto: false, subject: '3 ways to stay focused today', cta: 'Try Focus Mode', preview: `Hey {first_name},\n\nNow that you're tracking time, let's help you protect it.\n\nRize includes built-in focus tools:\n\nFocus Music — Curated playlists for deep work\nDistraction Blocker — Block time-wasting sites\nBreak Reminders — Stay fresh, avoid burnout\n\nThese features are included in your trial. Give one a try today.\n\n— The Rize Team` },
-          { day: 7, timing: 'Day 7', sender: 'Rize', hasPhoto: false, subject: 'Your first week in review', cta: 'View Your Dashboard', preview: `Hey {first_name},\n\nYou've been tracking for a week — here's what Rize has learned about your work patterns.\n\nWhat you'll see:\n• Total hours tracked this week\n• Your most productive times of day\n• Categories where you spend the most time\n\nThis is just the beginning. One more week to unlock even deeper insights.\n\n— The Rize Team` },
-          { day: 13, timing: 'Day 13 (Trial End)', sender: 'Macgill', hasPhoto: true, subject: "Your trial ends tomorrow — here's what you've built", cta: 'Continue Lite — $10/mo', preview: `Hey {first_name},\n\nYour 14-day Rize trial ends tomorrow.\n\nHere's what you've accomplished:\n• {hours_tracked} hours tracked\n• {entries_count} time entries logged\n• Top category: {top_category}\n\nYour card will be charged $10 tomorrow to continue Lite. To keep your data and continue tracking, no action needed.\n\nWant to cancel? No hard feelings — you can cancel anytime from account settings.\n\n— Macgill, CEO @ Rize` }
-        ],
-        pro: [
-          { day: 0, timing: 'Immediate', sender: 'Macgill', hasPhoto: true, subject: 'Welcome to Rize Pro! Let AI track for you', cta: 'Download for Mac', preview: `Hey {first_name},\n\nWelcome to Rize Pro — where AI does the time tracking for you.\n\nYour first step: Download the Rize desktop app\n\nOnce installed, Rize runs quietly in the background and automatically:\n• Tracks time spent in every app\n• Categorizes work by project and client\n• Generates billable hours reports\n\nNo more manual timers. No more forgotten hours.\n\n— Macgill, CEO @ Rize` },
-          { day: 1, timing: 'Day 1', sender: 'Rize', hasPhoto: false, subject: 'Your AI assistant is ready', cta: 'Enable Auto-Tracking', preview: `Hey {first_name},\n\nDid you know? Rize's AI can automatically categorize your work — no manual tagging needed.\n\nHere's how it works:\n\n1. You work normally (emails, Figma, VS Code, meetings)\n2. Rize watches and learns your patterns\n3. AI assigns each session to the right project/client\n\nPro users save an average of 5+ hours per week on manual time entry.\n\n— The Rize Team` },
-          { day: 3, timing: 'Day 3', sender: 'Rize', hasPhoto: false, subject: 'Add your first client in 2 minutes', cta: 'Add a Client', preview: `Hey {first_name},\n\nReady to track billable hours? Let's set up your first client.\n\nHere's what unlocks:\n✓ Automatic billable vs. non-billable separation\n✓ Per-client time reports\n✓ One-click invoice data export\n\nMost freelancers discover 2-3 hours of "lost" billable time in their first week.\n\n— The Rize Team` },
-          { day: 7, timing: 'Day 7', sender: 'Rize', hasPhoto: false, subject: 'Your billable hours report is ready', cta: 'View Billable Report', preview: `Hey {first_name},\n\nYou've been tracking for a week. Here's your first billable hours summary:\n\nWhat's inside:\n• Hours by client (billable vs. internal)\n• Project breakdown\n• Ready-to-export invoice data\n\nPro tip: Share this report directly with clients to build trust.\n\n— The Rize Team` },
-          { day: 13, timing: 'Day 13 (Trial End)', sender: 'Macgill', hasPhoto: true, subject: 'Your Pro trial ends tomorrow', cta: 'Continue Rize Pro', preview: `Hey {first_name},\n\nYour 14-day Rize Pro trial ends tomorrow.\n\nYour Pro stats:\n• {hours_tracked} hours auto-tracked\n• {billable_hours} billable hours captured\n• {clients_count} clients set up\n• Estimated value recovered: \${estimated_value}\n\nYour card will be charged $20 tomorrow to continue Pro.\n\nQuestions? Reply to this email — we're here to help.\n\n— Macgill, CEO @ Rize` }
-        ],
-        team: [
-          { day: 0, timing: 'Immediate', sender: 'Macgill', hasPhoto: true, subject: 'Your Rize Teams account is ready, {name}!', cta: 'Invite Team Members', preview: `Hey {first_name},\n\nYou're set up with Rize Teams — time tracking that shows you where your team's time actually goes.\n\nYour first step: Invite your team\n\nPro tip: Enable domain auto-join so anyone with @{domain} can join automatically.\n\nWhat you'll unlock with 2+ members:\n✓ Team utilization dashboards\n✓ Project profitability reports\n✓ Automatic weekly round-ups\n\nTeams that onboard together see results 200% faster.\n\n— Macgill, CEO @ Rize` },
-          { day: 1, timing: 'Day 1', sender: 'Rize', hasPhoto: false, subject: 'Your team dashboard is ready', cta: 'Open Team Dashboard', preview: `Hey {first_name},\n\nYour Rize Teams dashboard is live. Here's what you can see:\n\nReal-time visibility into:\n• Who's working on what right now\n• Hours logged per team member\n• Project progress at a glance\n\nNo more Slack check-ins or status meetings just to know what's happening.\n\n— The Rize Team` },
-          { day: 3, timing: 'Day 3', sender: 'Rize', hasPhoto: false, subject: 'See which projects are actually profitable', cta: 'Open Profitability Dashboard', preview: `Hey {first_name},\n\nHere's the question every agency owner asks: "Are we actually making money on this project?"\n\nRize Teams answers it automatically.\n\nWhat you'll see:\n• Revenue vs. time cost per project\n• Profit margin by client\n• Which projects are bleeding hours\n\nThis report has helped agencies recover an average of $2,400/month.\n\n— The Rize Team` },
-          { day: 7, timing: 'Day 7', sender: 'Rize', hasPhoto: false, subject: 'Your first team utilization report', cta: 'View Utilization Report', preview: `Hey {first_name},\n\nYour team has been tracking for a week. Here's your utilization summary:\n\nKey metrics:\n• Team-wide utilization rate\n• Billable vs. non-billable split\n• Individual member breakdown\n\nHealthy agency utilization is typically 65-80%. How does your team compare?\n\n— The Rize Team` },
-          { day: 10, timing: 'Day 10', sender: 'Macgill', hasPhoto: true, subject: 'Schedule your team onboarding call', cta: 'Schedule a 25-min Call', preview: `Hey {first_name},\n\nYou've been using Rize Teams for 10 days. Want help getting even more value?\n\nIn this call, we'll:\n• Review your team's setup\n• Optimize your profitability dashboards\n• Answer any questions\n\nThis call is free — teams who take it see 40% higher adoption.\n\n— Macgill, CEO @ Rize` },
-          { day: 13, timing: 'Day 13 (Trial End)', sender: 'Macgill', hasPhoto: true, subject: 'Your Teams trial ends tomorrow', cta: 'Continue Rize Teams', preview: `Hey {first_name},\n\nYour Rize Teams trial ends tomorrow.\n\nYour team's results:\n• {team_members} team members active\n• {total_hours} hours tracked\n• {billable_hours} billable hours captured\n• {projects_count} projects tracked\n\nEstimated monthly value: \${estimated_value}\n\nYour card will be charged $30/user tomorrow to continue Teams.\n\nQuestions about billing or team setup? Reply here.\n\n— Macgill, CEO @ Rize` }
-        ],
-        enterprise: [
-          { day: 0, timing: 'Immediate', sender: 'Macgill', hasPhoto: true, subject: "Let's set up Rize for {company}", cta: 'Book a 25-min Call', preview: `Hey {first_name},\n\nThanks for your interest in Rize Enterprise.\n\nWith 6+ team members, you'll benefit from:\n• Dedicated account manager\n• Custom integrations & API access\n• White-labeling options\n• Priority support\n\nLet's schedule a quick call to understand your needs.\n\nWe'll discuss:\n• Your team's workflow\n• Integration requirements\n• Custom pricing\n\nTalk soon.\n\n— Macgill, CEO @ Rize` },
-          { day: 1, timing: 'Day 1', sender: 'Macgill', hasPhoto: true, subject: 'Quick question about your team', cta: 'Reply', preview: `Hey {first_name},\n\nQuick follow-up: I'd love to learn more about your team before our call.\n\nA few questions:\n1. How many people will be using Rize?\n2. What tools does your team currently use for time tracking?\n3. What's your biggest pain point with your current setup?\n\nHit reply and let me know — it'll help me prepare a more relevant demo.\n\n— Macgill, CEO @ Rize` },
-          { day: 3, timing: 'Day 3', sender: 'CSM', hasPhoto: true, subject: 'Custom integrations for {company}', cta: 'Book Call', preview: `Hey {first_name},\n\nI wanted to share some of the custom integrations we've built for enterprise teams like yours:\n\n• SSO/SAML for secure authentication\n• Custom API for internal tools\n• Salesforce/HubSpot CRM sync\n• Custom reporting dashboards\n• White-label options\n\nWe can build almost anything your team needs. Let's talk.\n\n— Sarah, Customer Success @ Rize` },
-          { day: 7, timing: 'Day 7', sender: 'CSM', hasPhoto: true, subject: 'Your dedicated account manager', cta: 'Schedule Intro Call', preview: `Hey {first_name},\n\nI wanted to introduce myself — I'll be your dedicated account manager at Rize.\n\nI specialize in helping enterprise teams like yours:\n• Onboard large teams efficiently\n• Set up custom integrations\n• Optimize workflows for maximum ROI\n\nYou'll have direct access to me for any questions or support needs.\n\n— Sarah, Customer Success @ Rize` }
-        ]
-      };
-      const tierColor = tierColors[selectedTier];
-      const currentEmails = emails[selectedTier];
-      const currentEmail = currentEmails[selectedEmail];
-      return (
-        <div className="mx-auto px-6 py-8" style={{ maxWidth: '1200px' }}>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Post-Signup Email Drip Campaign</h1>
-            <p className="text-sm" style={{ color: '#a1a1aa' }}>Preview emails for each persona tier</p>
-          </div>
-          <TierSelector selectedTier={selectedTier} setSelectedTier={setSelectedTier} onTierChange={() => setSelectedEmail(0)} />
-          <div className="grid grid-cols-3 gap-6">
-            <div className="col-span-1">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium" style={{ color: '#71717a' }}>Email Sequence</h3>
-                <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: `${tierColor}20`, color: tierColor }}>{currentEmails.length} emails</span>
-              </div>
-              <div className="space-y-2">
-                {currentEmails.map((email, index) => (
-                  <button key={index} onClick={() => setSelectedEmail(index)} className="w-full text-left p-3 rounded-xl transition-all" style={{ backgroundColor: selectedEmail === index ? `${tierColor}15` : '#141419', border: selectedEmail === index ? `1px solid ${tierColor}40` : '1px solid rgba(255,255,255,0.1)' }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: `${tierColor}20`, color: tierColor }}>{email.timing}</span>
-                      {email.hasPhoto && <span className="text-xs" style={{ color: '#71717a' }}>photo</span>}
-                    </div>
-                    <p className="text-sm text-white truncate">{email.subject.replace('{name}', 'Johnny')}</p>
-                    <p className="text-xs mt-1" style={{ color: '#52525b' }}>From: {email.sender}</p>
-                  </button>
+        {/* Checklist Details */}
+        <div>
+          <h3 className="text-sm font-medium mb-4" style={{ color: '#71717a' }}>Checklist Specification</h3>
+          <div className="p-5 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <th className="text-left py-2 font-medium" style={{ color: '#71717a' }}>#</th>
+                  <th className="text-left py-2 font-medium" style={{ color: '#71717a' }}>Step</th>
+                  <th className="text-left py-2 font-medium" style={{ color: '#71717a' }}>Required</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentChecklist.map((item, index) => (
+                  <tr key={index} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td className="py-2 text-white">{index + 1}</td>
+                    <td className="py-2 text-white">{item.label}</td>
+                    <td className="py-2">
+                      <span
+                        className="text-xs px-2 py-0.5 rounded"
+                        style={{
+                          backgroundColor: item.skip ? 'rgba(255,255,255,0.05)' : `${tierColor}20`,
+                          color: item.skip ? '#71717a' : tierColor
+                        }}
+                      >
+                        {item.skip ? 'Optional' : 'Required'}
+                      </span>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            </div>
-            <div className="col-span-2">
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#fff' }}>
-                <div className="p-4" style={{ borderBottom: '1px solid #e5e5e5' }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: tierColor }}>R</div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: '#111' }}>{currentEmail.sender === 'Macgill' ? 'Macgill Hughes' : currentEmail.sender === 'CSM' ? 'Sarah Chen (CSM)' : 'Rize'}</p>
-                      <p className="text-xs" style={{ color: '#666' }}>{currentEmail.sender === 'Macgill' ? 'macgill@rize.io' : currentEmail.sender === 'CSM' ? 'sarah@rize.io' : 'hello@rize.io'}</p>
-                    </div>
-                  </div>
-                  <p className="font-semibold" style={{ color: '#111' }}>{currentEmail.subject.replace('{name}', 'Johnny').replace('{company}', 'Acme Inc')}</p>
-                </div>
-                <div className="p-6">
-                  {currentEmail.hasPhoto && (
-                    <div className="flex items-start gap-4 mb-6 p-4 rounded-lg" style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0" style={{ backgroundColor: currentEmail.sender === 'Macgill' ? '#a78bfa' : '#60a5fa' }}>{currentEmail.sender === 'Macgill' ? 'M' : 'S'}</div>
-                      <div>
-                        <p className="font-semibold text-sm" style={{ color: '#111' }}>{currentEmail.sender === 'Macgill' ? 'Macgill Hughes' : 'Sarah Chen'}</p>
-                        <p className="text-xs" style={{ color: '#666' }}>{currentEmail.sender === 'Macgill' ? 'CEO & Co-founder' : 'Customer Success Manager'}</p>
-                        <p className="text-xs mt-1" style={{ color: '#a78bfa' }}>{currentEmail.sender === 'Macgill' ? 'macgill@rize.io' : 'sarah@rize.io'}</p>
-                      </div>
-                    </div>
-                  )}
-                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: '#333', fontFamily: 'system-ui, -apple-system, sans-serif' }}>{currentEmail.preview.replace(/{first_name}/g, 'Johnny').replace(/{domain}/g, 'acme.com').replace(/{company}/g, 'Acme Inc')}</pre>
-                </div>
-                <div className="p-6 pt-0">
-                  <button className="px-6 py-3 rounded-md text-sm font-medium" style={{ backgroundColor: tierColor, color: '#fff' }}>{currentEmail.cta} →</button>
-                </div>
-              </div>
-            </div>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <h4 className="text-xs font-medium mb-2" style={{ color: '#71717a' }}>Notes</h4>
+            <ul className="text-sm space-y-1" style={{ color: '#a1a1aa' }}>
+              <li>• Widget appears in bottom-right of app</li>
+              <li>• Progress persists across sessions</li>
+              <li>• Can be minimized but not dismissed</li>
+              <li>• Disappears after all required steps complete</li>
+            </ul>
           </div>
         </div>
-      );
-    }
+      </div>
+    </div>
+  );
+}
 
-    function ChecklistView({ selectedTier, setSelectedTier }) {
-      const [completedSteps, setCompletedSteps] = useState([0]);
-      const tierColors = { lite: '#a78bfa', pro: '#a78bfa', team: '#a78bfa', enterprise: '#a78bfa' };
-      const checklists = {
-        lite: [
-          { label: 'Learn the basics', desc: 'Quick 2-min tour', skip: true },
-          { label: 'Log your first time entry', desc: 'Start tracking', skip: false },
-          { label: 'Try Focus Mode', desc: 'Music + distraction blocker', skip: true },
-          { label: 'Set a daily goal', desc: 'Target hours per day', skip: true },
-          { label: 'View your dashboard', desc: 'See your insights', skip: false }
-        ],
-        pro: [
-          { label: 'Download the app', desc: 'Mac or Windows', skip: false },
-          { label: 'Enable AI tracking', desc: 'Automatic categorization', skip: false },
-          { label: 'Add your first client', desc: 'Track billable hours', skip: true },
-          { label: 'Connect an integration', desc: 'ClickUp, Linear, etc.', skip: true },
-          { label: 'Review AI categorization', desc: 'Train the AI', skip: false },
-          { label: 'Generate a report', desc: 'Export to invoice', skip: true }
-        ],
-        team: [
-          { label: 'Invite your team', desc: 'Send invites', skip: false },
-          { label: 'Enable domain auto-join', desc: '@company.com joins', skip: true },
-          { label: 'Create your first project', desc: 'Track time by project', skip: false },
-          { label: 'Assign a client', desc: 'Link projects to clients', skip: true },
-          { label: 'View team dashboard', desc: "See everyone's time", skip: false },
-          { label: 'Check profitability report', desc: 'Revenue vs. cost', skip: false },
-          { label: 'Set up auto-reports', desc: 'Weekly summaries', skip: true }
-        ],
-        enterprise: [
-          { label: 'Book onboarding call', desc: 'Meet with Macgill', skip: false },
-          { label: 'Complete qualification form', desc: 'Tell us your needs', skip: false },
-          { label: 'Meet your account manager', desc: 'Dedicated support', skip: false }
-        ]
-      };
-      const tierColor = tierColors[selectedTier];
-      const currentChecklist = checklists[selectedTier];
-      const progress = Math.round((completedSteps.length / currentChecklist.length) * 100);
-      const toggleStep = (index) => { if (completedSteps.includes(index)) { setCompletedSteps(completedSteps.filter(i => i !== index)); } else { setCompletedSteps([...completedSteps, index]); } };
-      useEffect(() => { setCompletedSteps([0]); }, [selectedTier]);
-      return (
-        <div className="mx-auto px-6 py-8" style={{ maxWidth: '1200px' }}>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">In-App Onboarding Checklist</h1>
-            <p className="text-sm" style={{ color: '#a1a1aa' }}>Preview the checklist widget for each persona</p>
-          </div>
-          <TierSelector selectedTier={selectedTier} setSelectedTier={setSelectedTier} />
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-sm font-medium mb-4" style={{ color: '#71717a' }}>Widget Preview</h3>
-              <div className="p-5 rounded-xl" style={{ backgroundColor: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-medium text-white">Get started with Rize</h3>
-                  <span className="text-xs" style={{ color: '#71717a' }}>{completedSteps.length}/{currentChecklist.length}</span>
-                </div>
-                <div className="h-1.5 rounded-full mb-5" style={{ backgroundColor: '#2a2a2f' }}>
-                  <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, backgroundColor: tierColor }} />
-                </div>
-                <div className="space-y-2">
-                  {currentChecklist.map((item, index) => (
-                    <button key={index} onClick={() => toggleStep(index)} className="w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all hover:bg-white/5" style={{ backgroundColor: completedSteps.includes(index) ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
-                      <div className="w-5 h-5 rounded flex items-center justify-center text-xs flex-shrink-0 transition-all" style={{ backgroundColor: completedSteps.includes(index) ? tierColor : 'transparent', border: completedSteps.includes(index) ? 'none' : '1px solid rgba(255,255,255,0.2)' }}>{completedSteps.includes(index) && '✓'}</div>
-                      <div className="flex-1">
-                        <span className="text-sm block" style={{ color: completedSteps.includes(index) ? '#71717a' : '#fff', textDecoration: completedSteps.includes(index) ? 'line-through' : 'none' }}>{item.label}</span>
-                        <span className="text-xs" style={{ color: '#52525b' }}>{item.desc}</span>
-                      </div>
-                      {item.skip && !completedSteps.includes(index) && <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#71717a' }}>Skip</span>}
-                    </button>
-                  ))}
-                </div>
-                <button className="w-full mt-5 py-2.5 rounded-md text-sm font-medium transition-all" style={{ backgroundColor: tierColor, color: '#fff' }}>Continue →</button>
+// ==========================================
+// TIMELINE VIEW
+// ==========================================
+function TimelineView({ selectedTier, setSelectedTier }) {
+  const tierColors = {
+    lite: '#a78bfa',
+    pro: '#a78bfa',
+    team: '#a78bfa',
+    enterprise: '#a78bfa'
+  };
+
+  const timelines = {
+    lite: [
+      { day: 0, emails: ['Welcome (Macgill, photo)', 'Install reminder (+2h)'], inApp: 'Checklist appears' },
+      { day: 1, emails: ['Activation check'], inApp: 'First entry prompt' },
+      { day: 3, emails: ['Focus features'], inApp: 'Focus mode nudge' },
+      { day: 7, emails: ['Week review'], inApp: 'Dashboard tour' },
+      { day: 13, emails: ['Trial end (Macgill, photo)'], inApp: 'Upgrade modal' }
+    ],
+    pro: [
+      { day: 0, emails: ['Welcome (Macgill, photo)', 'Download reminder (+2h)'], inApp: 'Checklist appears' },
+      { day: 1, emails: ['AI tracking intro'], inApp: 'AI setup wizard' },
+      { day: 3, emails: ['Add client'], inApp: 'Client prompt' },
+      { day: 7, emails: ['Billable report'], inApp: 'Report tour' },
+      { day: 10, emails: ['Integration reminder'], inApp: 'Connect tools' },
+      { day: 13, emails: ['Trial end (Macgill, photo)'], inApp: 'Upgrade modal' }
+    ],
+    team: [
+      { day: 0, emails: ['Welcome (Macgill, photo)', 'Download for team (+2h)'], inApp: 'Checklist + invite modal' },
+      { day: 1, emails: ['Team dashboard'], inApp: 'Dashboard tour' },
+      { day: 3, emails: ['Profitability intro'], inApp: 'Profitability prompt' },
+      { day: 7, emails: ['Utilization report'], inApp: 'Report tour' },
+      { day: 10, emails: ['Onboarding call (Macgill, photo)'], inApp: 'Calendar embed' },
+      { day: 13, emails: ['Trial end (Macgill, photo)'], inApp: 'Upgrade modal' }
+    ],
+    enterprise: [
+      { day: 0, emails: ['Welcome (Macgill, photo)'], inApp: 'Book call modal' },
+      { day: 1, emails: ['Qualification (Macgill, photo)'], inApp: 'Form prompt' },
+      { day: 3, emails: ['Custom integrations (CSM, photo)'], inApp: 'Integration wizard' },
+      { day: 7, emails: ['Account manager intro (CSM, photo)'], inApp: 'CSM calendar' }
+    ]
+  };
+
+  const tierColor = tierColors[selectedTier];
+  const currentTimeline = timelines[selectedTier];
+
+  return (
+    <div className="mx-auto px-6 py-8" style={{ maxWidth: '1200px' }}>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Email & In-App Timeline</h1>
+        <p className="text-sm" style={{ color: '#a1a1aa' }}>See when emails and in-app messages trigger</p>
+      </div>
+
+      {/* Tier Selector */}
+      <TierSelector selectedTier={selectedTier} setSelectedTier={setSelectedTier} />
+
+      {/* Timeline */}
+      <div className="relative">
+        {/* Timeline line */}
+        <div
+          className="absolute left-8 top-0 bottom-0 w-0.5"
+          style={{ backgroundColor: `${tierColor}30` }}
+        />
+
+        <div className="space-y-6">
+          {currentTimeline.map((item, index) => (
+            <div key={index} className="relative flex gap-6">
+              {/* Day marker */}
+              <div
+                className="w-16 h-16 rounded-xl flex flex-col items-center justify-center flex-shrink-0 z-10"
+                style={{ backgroundColor: `${tierColor}20`, border: `1px solid ${tierColor}40` }}
+              >
+                <span className="text-xs" style={{ color: '#71717a' }}>Day</span>
+                <span className="text-xl font-bold" style={{ color: tierColor }}>{item.day}</span>
               </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium mb-4" style={{ color: '#71717a' }}>Checklist Specification</h3>
-              <div className="p-5 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <th className="text-left py-2 font-medium" style={{ color: '#71717a' }}>#</th>
-                      <th className="text-left py-2 font-medium" style={{ color: '#71717a' }}>Step</th>
-                      <th className="text-left py-2 font-medium" style={{ color: '#71717a' }}>Required</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentChecklist.map((item, index) => (
-                      <tr key={index} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td className="py-2 text-white">{index + 1}</td>
-                        <td className="py-2 text-white">{item.label}</td>
-                        <td className="py-2"><span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: item.skip ? 'rgba(255,255,255,0.05)' : `${tierColor}20`, color: item.skip ? '#71717a' : tierColor }}>{item.skip ? 'Optional' : 'Required'}</span></td>
-                      </tr>
+
+              {/* Content */}
+              <div className="flex-1 grid grid-cols-2 gap-4">
+                {/* Emails */}
+                <div className="p-4 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">📧</span>
+                    <span className="text-xs font-medium" style={{ color: '#71717a' }}>EMAILS</span>
+                  </div>
+                  <div className="space-y-2">
+                    {item.emails.map((email, i) => (
+                      <div key={i} className="text-sm text-white flex items-center gap-2">
+                        <span style={{ color: tierColor }}>•</span>
+                        {email}
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function TimelineView({ selectedTier, setSelectedTier }) {
-      const tierColors = { lite: '#a78bfa', pro: '#a78bfa', team: '#a78bfa', enterprise: '#a78bfa' };
-      const timelines = {
-        lite: [
-          { day: 0, emails: ['Welcome (Macgill, photo)', 'Install reminder (+2h)'], inApp: 'Checklist appears' },
-          { day: 1, emails: ['Activation check'], inApp: 'First entry prompt' },
-          { day: 3, emails: ['Focus features'], inApp: 'Focus mode nudge' },
-          { day: 7, emails: ['Week review'], inApp: 'Dashboard tour' },
-          { day: 13, emails: ['Trial end (Macgill, photo)'], inApp: 'Upgrade modal' }
-        ],
-        pro: [
-          { day: 0, emails: ['Welcome (Macgill, photo)', 'Download reminder (+2h)'], inApp: 'Checklist appears' },
-          { day: 1, emails: ['AI tracking intro'], inApp: 'AI setup wizard' },
-          { day: 3, emails: ['Add client'], inApp: 'Client prompt' },
-          { day: 7, emails: ['Billable report'], inApp: 'Report tour' },
-          { day: 10, emails: ['Integration reminder'], inApp: 'Connect tools' },
-          { day: 13, emails: ['Trial end (Macgill, photo)'], inApp: 'Upgrade modal' }
-        ],
-        team: [
-          { day: 0, emails: ['Welcome (Macgill, photo)', 'Download for team (+2h)'], inApp: 'Checklist + invite modal' },
-          { day: 1, emails: ['Team dashboard'], inApp: 'Dashboard tour' },
-          { day: 3, emails: ['Profitability intro'], inApp: 'Profitability prompt' },
-          { day: 7, emails: ['Utilization report'], inApp: 'Report tour' },
-          { day: 10, emails: ['Onboarding call (Macgill, photo)'], inApp: 'Calendar embed' },
-          { day: 13, emails: ['Trial end (Macgill, photo)'], inApp: 'Upgrade modal' }
-        ],
-        enterprise: [
-          { day: 0, emails: ['Welcome (Macgill, photo)'], inApp: 'Book call modal' },
-          { day: 1, emails: ['Qualification (Macgill, photo)'], inApp: 'Form prompt' },
-          { day: 3, emails: ['Custom integrations (CSM, photo)'], inApp: 'Integration wizard' },
-          { day: 7, emails: ['Account manager intro (CSM, photo)'], inApp: 'CSM calendar' }
-        ]
-      };
-      const tierColor = tierColors[selectedTier];
-      const currentTimeline = timelines[selectedTier];
-      return (
-        <div className="mx-auto px-6 py-8" style={{ maxWidth: '1200px' }}>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Email & In-App Timeline</h1>
-            <p className="text-sm" style={{ color: '#a1a1aa' }}>See when emails and in-app messages trigger</p>
-          </div>
-          <TierSelector selectedTier={selectedTier} setSelectedTier={setSelectedTier} />
-          <div className="relative">
-            <div className="absolute left-8 top-0 bottom-0 w-0.5" style={{ backgroundColor: `${tierColor}30` }} />
-            <div className="space-y-6">
-              {currentTimeline.map((item, index) => (
-                <div key={index} className="relative flex gap-6">
-                  <div className="w-16 h-16 rounded-xl flex flex-col items-center justify-center flex-shrink-0 z-10" style={{ backgroundColor: `${tierColor}20`, border: `1px solid ${tierColor}40` }}>
-                    <span className="text-xs" style={{ color: '#71717a' }}>Day</span>
-                    <span className="text-xl font-bold" style={{ color: tierColor }}>{item.day}</span>
-                  </div>
-                  <div className="flex-1 grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <div className="flex items-center gap-2 mb-3"><span className="text-lg">email</span><span className="text-xs font-medium" style={{ color: '#71717a' }}>EMAILS</span></div>
-                      <div className="space-y-2">{item.emails.map((email, i) => (<div key={i} className="text-sm text-white flex items-center gap-2"><span style={{ color: tierColor }}>•</span>{email}</div>))}</div>
-                    </div>
-                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <div className="flex items-center gap-2 mb-3"><span className="text-lg">app</span><span className="text-xs font-medium" style={{ color: '#71717a' }}>IN-APP</span></div>
-                      <div className="text-sm text-white flex items-center gap-2"><span style={{ color: tierColor }}>•</span>{item.inApp}</div>
-                    </div>
                   </div>
                 </div>
-              ))}
+
+                {/* In-App */}
+                <div className="p-4 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">💻</span>
+                    <span className="text-xs font-medium" style={{ color: '#71717a' }}>IN-APP</span>
+                  </div>
+                  <div className="text-sm text-white flex items-center gap-2">
+                    <span style={{ color: tierColor }}>•</span>
+                    {item.inApp}
+                  </div>
+                </div>
+              </div>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-8 p-4 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <h4 className="text-xs font-medium mb-3" style={{ color: '#71717a' }}>Legend</h4>
+        <div className="flex gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <span>📸</span>
+            <span style={{ color: '#a1a1aa' }}>Includes team member photo</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ color: '#a78bfa' }}>Macgill</span>
+            <span style={{ color: '#71717a' }}>= CEO</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ color: '#60a5fa' }}>CSM</span>
+            <span style={{ color: '#71717a' }}>= Customer Success Manager</span>
           </div>
         </div>
-      );
-    }
+      </div>
+    </div>
+  );
+}
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    // Auto-detect and render the main component
+    const AppComponent = typeof App !== 'undefined' ? App :
+                         typeof RizeOnboardingEmails !== 'undefined' ? RizeOnboardingEmails :
+                         () => <div>No component found</div>;
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AppComponent />);
   </script>
 </body>
 </html>
