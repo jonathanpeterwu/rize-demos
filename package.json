@@ -1,0 +1,16 @@
+{
+  "name": "rize-demos",
+  "version": "1.0.0",
+  "description": "Rize.io interactive product demos",
+  "scripts": {
+    "build:jsx": "node scripts/jsx-to-html.js",
+    "build:all": "node scripts/build-all.js",
+    "watch": "node scripts/watch.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonathanpeterwu/rize-demos.git"
+  },
+  "keywords": ["rize", "demos", "react", "jsx"],
+  "license": "MIT"
+}
