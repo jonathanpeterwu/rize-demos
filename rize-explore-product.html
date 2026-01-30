@@ -3,14 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rize - Explore Product</title>
+  <title>Rize Explore Product</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; background: #111113; font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111113;
+      font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased;
+    }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
@@ -19,601 +25,707 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-    // Rize Dashboard Explore Product Experience
-    // Pre-signup demo with CTA overlay, welcome modal, and product tour
+// Rize Explore Product - Pre-Signup Interactive Demo
+// Pattern inspired by Ramp's explore-product experience
 
-    function App() {
-      const [showWelcomeModal, setShowWelcomeModal] = useState(true);
-      const [showProductTour, setShowProductTour] = useState(false);
-      const [selectedPersona, setSelectedPersona] = useState('productivity');
-      const [completedSteps, setCompletedSteps] = useState({
-        productivity: ['overview'],
-        freelancer: ['overview'],
-        manager: ['overview'],
-        founder: ['overview']
-      });
-      const [showEmailCapture, setShowEmailCapture] = useState(false);
-      const [email, setEmail] = useState('jonathan.x.wu@gmail.com');
+function App() {
+  const [view, setView] = useState('explore');
+  const [email, setEmail] = useState('jonathan.x.wu@gmail.com');
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState('tracking');
 
-      // Persona definitions
-      const personas = [
-        { id: 'productivity', label: 'Productivity', icon: '⚡', color: '#a78bfa' },
-        { id: 'freelancer', label: 'IC/Freelancer', icon: '💼', color: '#60a5fa' },
-        { id: 'manager', label: 'Manager', icon: '👥', color: '#34d399' },
-        { id: 'founder', label: 'Owner/Founder', icon: '🚀', color: '#f97316' }
-      ];
-
-      // Persona-specific tour steps
-      const tourStepsByPersona = {
-        productivity: [
-          { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize automatically tracks your time' },
-          { id: 'focus', title: 'Focus Sessions', description: 'Block distractions and enter deep work mode' },
-          { id: 'breaks', title: 'Smart Breaks', description: 'Get reminded to take healthy breaks' },
-          { id: 'goals', title: 'Daily Goals', description: 'Set and track your productivity targets' },
-          { id: 'getstarted', title: 'Get Started with Rize', description: 'Create your account and boost productivity' }
-        ],
-        freelancer: [
-          { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize automatically tracks your time' },
-          { id: 'projects', title: 'Project Tracking', description: 'Organize time by client and project' },
-          { id: 'billable', title: 'Billable Hours', description: 'Track and export billable time accurately' },
-          { id: 'reports', title: 'Client Reports', description: 'Generate professional time reports' },
-          { id: 'getstarted', title: 'Get Started with Rize', description: 'Start tracking billable hours today' }
-        ],
-        manager: [
-          { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize tracks team productivity' },
-          { id: 'visibility', title: 'Team Visibility', description: 'See how your team spends their time' },
-          { id: 'workload', title: 'Workload Balance', description: 'Identify burnout risks and optimize capacity' },
-          { id: 'roundups', title: 'Team Round-ups', description: 'Automated weekly team productivity reports' },
-          { id: 'getstarted', title: 'Get Started with Rize', description: 'Roll out Rize to your team' }
-        ],
-        founder: [
-          { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize drives company productivity' },
-          { id: 'profitability', title: 'Profitability Dashboard', description: 'Track project margins and utilization' },
-          { id: 'clients', title: 'Client Analytics', description: 'Understand time spent per client' },
-          { id: 'insights', title: 'Company Insights', description: 'AI-powered recommendations for efficiency' },
-          { id: 'getstarted', title: 'Get Started with Rize', description: 'Transform how your company tracks time' }
-        ]
-      };
-
-      const tourSteps = tourStepsByPersona[selectedPersona];
-      const currentCompleted = completedSteps[selectedPersona];
-      const tourProgress = (currentCompleted.length / tourSteps.length) * 100;
-
-      const handleTourStepClick = (stepId) => {
-        if (!currentCompleted.includes(stepId)) {
-          setCompletedSteps(prev => ({
-            ...prev,
-            [selectedPersona]: [...prev[selectedPersona], stepId]
-          }));
-        }
-        if (stepId === 'getstarted') {
-          setShowEmailCapture(true);
-        }
-      };
-
-      const handlePersonaChange = (personaId) => {
-        setSelectedPersona(personaId);
-      };
-
-      const handleStartExploring = () => {
-        setShowWelcomeModal(false);
-        setShowProductTour(true);
-      };
-
-      const handleGetStarted = () => {
-        setShowEmailCapture(true);
-      };
-
-      return (
-        <div className="min-h-screen relative" style={{ backgroundColor: '#111113', fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
-          {/* Top CTA Bar */}
-          <div className="sticky top-0 z-40 px-4 py-2.5 flex items-center justify-center gap-4" style={{ backgroundColor: '#a78bfa' }}>
-            <span className="text-sm font-medium text-white">Ready to start tracking your time?</span>
+  return (
+    <div className="min-h-screen text-white antialiased" style={{ backgroundColor: '#111113' }}>
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 border-b px-6 py-4" style={{ backgroundColor: '#111113', borderColor: 'rgba(255,255,255,0.1)' }}>
+        <div className="mx-auto max-w-6xl flex items-center justify-between">
+          <span className="text-xl tracking-widest font-light">RIZE</span>
+          <div className="flex items-center gap-6">
             <button
-              onClick={handleGetStarted}
-              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors hover:opacity-90"
-              style={{ backgroundColor: '#fff', color: '#7c3aed' }}
+              onClick={() => setView('explore')}
+              className="text-sm"
+              style={{ color: view === 'explore' ? '#fff' : '#a1a1aa' }}
+            >
+              Explore
+            </button>
+            <button
+              onClick={() => setView('demo')}
+              className="text-sm"
+              style={{ color: view === 'demo' ? '#fff' : '#a1a1aa' }}
+            >
+              Interactive Demo
+            </button>
+            <button
+              onClick={() => setShowEmailCapture(true)}
+              className="px-4 py-2 rounded-md text-sm font-medium"
+              style={{ backgroundColor: '#e4e4e7', color: '#000' }}
             >
               Get Started Free
             </button>
           </div>
+        </div>
+      </nav>
 
-          {/* Main Layout */}
-          <div className="flex">
-            {/* Sidebar */}
-            <div className="w-64 min-h-screen flex flex-col" style={{ backgroundColor: '#0d0d0f', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
-              {/* Logo */}
-              <div className="p-4 flex items-center gap-2">
-                <span className="text-lg tracking-widest font-light text-white">RIZE</span>
-                <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(167,139,250,0.2)', color: '#a78bfa' }}>DEMO</span>
-              </div>
+      {view === 'explore' && (
+        <ExploreView
+          selectedFeature={selectedFeature}
+          setSelectedFeature={setSelectedFeature}
+          onGetStarted={() => setShowEmailCapture(true)}
+        />
+      )}
 
-              {/* Navigation */}
-              <nav className="flex-1 px-2 py-4">
-                <div className="space-y-1">
-                  {[
-                    { label: 'Home', active: true },
-                    { label: 'Timer' },
-                    { label: 'Activity' },
-                    { label: 'Workspaces' },
-                    { label: 'Profitability' },
-                    { label: 'Billing' }
-                  ].map((item, i) => (
-                    <button
-                      key={i}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors"
-                      style={{
-                        backgroundColor: item.active ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        color: item.active ? '#fff' : '#71717a'
-                      }}
-                    >
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
+      {view === 'demo' && (
+        <InteractiveDemo onGetStarted={() => setShowEmailCapture(true)} />
+      )}
 
-                {/* Divider */}
-                <div className="my-4 mx-3 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+      {/* Email Capture Modal */}
+      {showEmailCapture && (
+        <EmailCaptureModal
+          email={email}
+          setEmail={setEmail}
+          onClose={() => setShowEmailCapture(false)}
+        />
+      )}
+    </div>
+  );
+}
 
-                {/* Secondary Nav */}
-                <div className="space-y-1">
-                  {[
-                    { label: 'Video Tutorials' },
-                    { label: 'Refer Friends' }
-                  ].map((item, i) => (
-                    <button
-                      key={i}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm"
-                      style={{ color: '#71717a' }}
-                    >
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </nav>
+// ==========================================
+// EXPLORE VIEW
+// ==========================================
+function ExploreView({ selectedFeature, setSelectedFeature, onGetStarted }) {
+  const features = [
+    {
+      id: 'tracking',
+      name: 'Automatic Time Tracking',
+      tagline: 'Stop starting timers. Start working.',
+      description: 'Rize runs quietly in the background, automatically tracking time spent in every app, browser tab, and meeting. No manual timers, no forgotten hours.',
+      benefits: ['AI-powered categorization', 'Works across all apps', 'Zero setup required'],
+      demo: 'tracking'
+    },
+    {
+      id: 'insights',
+      name: 'Productivity Insights',
+      tagline: 'Finally understand where your time goes.',
+      description: 'See your work patterns visualized. Discover your most productive hours, track focus time vs. distractions, and identify time sinks.',
+      benefits: ['Daily & weekly reports', 'Focus score tracking', 'Distraction analysis'],
+      demo: 'insights'
+    },
+    {
+      id: 'billing',
+      name: 'Billable Hours',
+      tagline: 'Never miss a billable minute.',
+      description: 'Automatically capture billable time by client and project. Generate professional reports and export data for invoicing in one click.',
+      benefits: ['Client & project tracking', 'Automatic categorization', 'One-click invoice export'],
+      demo: 'billing'
+    },
+    {
+      id: 'teams',
+      name: 'Team Visibility',
+      tagline: 'See your whole team\'s workload.',
+      description: 'Real-time dashboards show who\'s working on what, project profitability, and team utilization. No more status meetings.',
+      benefits: ['Utilization dashboards', 'Profitability reports', 'Automatic team round-ups'],
+      demo: 'teams'
+    }
+  ];
 
-              {/* Product Tour Button */}
-              <div className="p-3">
-                <button
-                  onClick={() => setShowProductTour(!showProductTour)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: showProductTour ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: showProductTour ? '1px solid rgba(167,139,250,0.3)' : '1px solid rgba(255,255,255,0.1)',
-                    color: showProductTour ? '#a78bfa' : '#a1a1aa'
-                  }}
-                >
-                  <span>Product Tour</span>
-                  <span className="ml-auto text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(167,139,250,0.2)', color: '#a78bfa' }}>
-                    {Math.round(tourProgress)}%
-                  </span>
-                </button>
-              </div>
+  const currentFeature = features.find(f => f.id === selectedFeature);
 
-              {/* Account */}
-              <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                <div className="flex items-center gap-3 px-3 py-2">
-                  <img
-                    src="https://i.imgur.com/JqYWQxO.jpg"
-                    alt="Johnny Wu"
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm text-white">Johnny Wu</p>
-                    <p className="text-xs" style={{ color: '#71717a' }}>Product Team</p>
-                  </div>
-                </div>
-              </div>
+  return (
+    <div>
+      {/* Hero */}
+      <section className="px-6 py-16 text-center" style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+          See Rize in Action
+        </h1>
+        <p className="text-lg mb-8" style={{ color: '#a1a1aa' }}>
+          Explore how Rize saves 5+ hours per week on time tracking—before you sign up.
+        </p>
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={onGetStarted}
+            className="px-6 py-3 rounded-md text-sm font-medium"
+            style={{ backgroundColor: '#e4e4e7', color: '#000' }}
+          >
+            Start Free Trial
+          </button>
+          <a
+            href="#features"
+            className="px-6 py-3 rounded-md text-sm font-medium"
+            style={{ color: '#a1a1aa' }}
+          >
+            Explore Features ↓
+          </a>
+        </div>
+      </section>
+
+      {/* Feature Tabs */}
+      <section id="features" className="px-6 py-12" style={{ backgroundColor: '#0d0d0f' }}>
+        <div className="mx-auto" style={{ maxWidth: '1100px' }}>
+          {/* Tab Navigation */}
+          <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+            {features.map(feature => (
+              <button
+                key={feature.id}
+                onClick={() => setSelectedFeature(feature.id)}
+                className="px-5 py-3 rounded-lg text-sm font-medium whitespace-nowrap transition-all"
+                style={{
+                  backgroundColor: selectedFeature === feature.id ? '#a78bfa20' : '#141419',
+                  border: selectedFeature === feature.id ? '1px solid #a78bfa40' : '1px solid rgba(255,255,255,0.1)',
+                  color: selectedFeature === feature.id ? '#a78bfa' : '#a1a1aa'
+                }}
+              >
+                {feature.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Feature Content */}
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* Left: Description */}
+            <div>
+              <p className="text-sm mb-2" style={{ color: '#a78bfa' }}>{currentFeature.tagline}</p>
+              <h2 className="text-2xl font-semibold text-white mb-4">{currentFeature.name}</h2>
+              <p className="mb-6" style={{ color: '#a1a1aa' }}>{currentFeature.description}</p>
+              <ul className="space-y-3 mb-8">
+                {currentFeature.benefits.map((benefit, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm text-white">{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={onGetStarted}
+                className="px-5 py-2.5 rounded-md text-sm font-medium"
+                style={{ backgroundColor: '#a78bfa', color: '#fff' }}
+              >
+                Try {currentFeature.name} Free →
+              </button>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 relative">
-              {/* Activity Header */}
-              <div className="px-6 pt-4 pb-2" style={{ filter: showWelcomeModal ? 'blur(4px)' : 'none', transition: 'filter 0.3s' }}>
-                <div className="flex items-center gap-2 mb-4">
-                  <svg className="w-5 h-5" style={{ color: '#a1a1aa' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
-                  </svg>
-                  <h1 className="text-lg font-semibold text-white">Activity</h1>
-                </div>
+            {/* Right: Demo Preview */}
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <FeatureDemo feature={currentFeature.id} />
+            </div>
+          </div>
+        </div>
+      </section>
 
-                {/* Tabs */}
-                <div className="flex items-center gap-1 mb-4">
-                  <button className="px-3 py-1.5 rounded text-sm font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#e4e4e7' }}>
-                    Timeline
-                  </button>
-                  <button className="px-3 py-1.5 rounded text-sm font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    Event Log
-                  </button>
-                  <button className="px-3 py-1.5 rounded text-sm font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    Tracking Rules
-                  </button>
-                </div>
+      {/* Stats Bar */}
+      <section className="px-6 py-12">
+        <div className="mx-auto grid grid-cols-4 gap-4" style={{ maxWidth: '900px' }}>
+          {[
+            { stat: '100K+', label: 'Users' },
+            { stat: '5+ hrs', label: 'Saved weekly' },
+            { stat: '98%', label: 'Accuracy' },
+            { stat: '4.8/5', label: 'Rating' }
+          ].map((item, i) => (
+            <div key={i} className="text-center p-4 rounded-xl" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="text-2xl font-bold mb-1" style={{ color: '#a78bfa' }}>{item.stat}</div>
+              <div className="text-xs" style={{ color: '#71717a' }}>{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-                {/* Date Navigator */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button className="w-8 h-8 rounded flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
-                    </button>
-                    <span className="text-sm font-medium text-white">Wed, Jan 29, 2025</span>
-                    <button className="w-8 h-8 rounded flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button className="px-3 py-1.5 rounded text-xs font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#e4e4e7' }}>Day</button>
-                    <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Week</button>
-                    <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Month</button>
-                    <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Year</button>
-                    <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Custom</button>
-                  </div>
-                </div>
+      {/* Email CTA */}
+      <section className="px-6 py-16" style={{ backgroundColor: '#0d0d0f' }}>
+        <div className="mx-auto text-center" style={{ maxWidth: '500px' }}>
+          <h2 className="text-2xl font-semibold text-white mb-3">Ready to see where your time goes?</h2>
+          <p className="text-sm mb-6" style={{ color: '#71717a' }}>Start your free 14-day trial. No credit card required to explore.</p>
+          <button
+            onClick={onGetStarted}
+            className="px-8 py-3 rounded-md text-sm font-medium"
+            style={{ backgroundColor: '#e4e4e7', color: '#000' }}
+          >
+            Get Started Free
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ==========================================
+// FEATURE DEMO PREVIEWS
+// ==========================================
+function FeatureDemo({ feature }) {
+  if (feature === 'tracking') {
+    return (
+      <div className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#eab308' }} />
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+          <span className="ml-2 text-xs" style={{ color: '#71717a' }}>Rize Desktop</span>
+        </div>
+        <div className="space-y-3">
+          {[
+            { app: 'VS Code', project: 'Client: Acme', time: '2h 14m', color: '#3b82f6' },
+            { app: 'Figma', project: 'Client: TechCorp', time: '1h 32m', color: '#a78bfa' },
+            { app: 'Slack', project: 'Internal', time: '45m', color: '#f97316' },
+            { app: 'Google Meet', project: 'Client: Acme', time: '30m', color: '#22c55e' }
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: '#1a1a1f' }}>
+              <div className="w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: item.color }}>
+                {item.app[0]}
               </div>
-
-              {/* Activity Content */}
-              <div className="p-6 space-y-4" style={{ filter: showWelcomeModal ? 'blur(4px)' : 'none', transition: 'filter 0.3s' }}>
-                {/* Timeline Card */}
-                <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <span className="text-sm font-medium text-white">Timeline</span>
-                    <button className="text-xs transition-colors hover:text-white" style={{ color: '#71717a' }}>
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    {/* Timeline visualization */}
-                    <div className="relative h-16">
-                      {/* Hour markers */}
-                      <div className="absolute inset-x-0 top-0 flex justify-between text-xs" style={{ color: '#52525b' }}>
-                        <span>12a</span><span>3a</span><span>6a</span><span>9a</span><span>12p</span><span>3p</span><span>6p</span><span>9p</span>
-                      </div>
-                      {/* Timeline bars */}
-                      <div className="absolute inset-x-0 bottom-0 h-8 rounded overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                        {/* Morning work block */}
-                        <div className="absolute h-full" style={{ left: '37.5%', width: '12%', backgroundColor: '#3b82f6' }} />
-                        {/* Afternoon work block */}
-                        <div className="absolute h-full" style={{ left: '54%', width: '15%', backgroundColor: '#a78bfa' }} />
-                        {/* Late work block */}
-                        <div className="absolute h-full" style={{ left: '75%', width: '8%', backgroundColor: '#22c55e' }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-3 gap-4">
-                  {/* Pie Chart Card */}
-                  <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                      <span className="text-sm font-medium text-white">Pie Chart</span>
-                    </div>
-                    <div className="p-4 flex items-center justify-center">
-                      <div className="relative w-24 h-24">
-                        {/* Simple pie chart SVG */}
-                        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="20" />
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#3b82f6" strokeWidth="20" strokeDasharray="78.5 251.3" strokeDashoffset="0" />
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#a78bfa" strokeWidth="20" strokeDasharray="56.5 251.3" strokeDashoffset="-78.5" />
-                          <circle cx="50" cy="50" r="40" fill="none" stroke="#22c55e" strokeWidth="20" strokeDasharray="37.7 251.3" strokeDashoffset="-135" />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-xl font-semibold text-white">58</span>
-                          <span className="text-xs" style={{ color: '#71717a' }}>min</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Categories Card */}
-                  <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                      <span className="text-sm font-medium text-white">Categories</span>
-                      <button className="text-xs transition-colors hover:text-white" style={{ color: '#71717a' }}>Edit</button>
-                    </div>
-                    <div className="p-4 space-y-3">
-                      {[
-                        { name: 'Code', percent: 31, color: '#3b82f6', time: '18m' },
-                        { name: 'Miscellaneous', percent: 23, color: '#71717a', time: '14m' },
-                        { name: 'Communication', percent: 23, color: '#a78bfa', time: '13m' },
-                        { name: 'Writing', percent: 15, color: '#22c55e', time: '9m' }
-                      ].map((cat, i) => (
-                        <div key={i} className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-white">{cat.name}</span>
-                            <span className="text-xs" style={{ color: '#71717a' }}>{cat.percent}% · {cat.time}</span>
-                          </div>
-                          <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                            <div className="h-full rounded-full" style={{ width: `${cat.percent}%`, backgroundColor: cat.color }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Apps & Websites Card */}
-                  <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                      <span className="text-sm font-medium text-white">Apps & Websites</span>
-                      <button className="text-xs transition-colors hover:text-white" style={{ color: '#71717a' }}>Edit</button>
-                    </div>
-                    <div className="p-4 space-y-3">
-                      {[
-                        { name: 'Ghostty', percent: 18, color: '#3b82f6', time: '11m' },
-                        { name: 'Claude', percent: 18, color: '#f97316', time: '10m' },
-                        { name: 'Slack', percent: 15, color: '#4A154B', time: '9m' },
-                        { name: 'Linear', percent: 13, color: '#5e6ad2', time: '7m' }
-                      ].map((app, i) => (
-                        <div key={i} className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-white">{app.name}</span>
-                            <span className="text-xs" style={{ color: '#71717a' }}>{app.percent}% · {app.time}</span>
-                          </div>
-                          <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                            <div className="h-full rounded-full" style={{ width: `${app.percent}%`, backgroundColor: app.color }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              <div className="flex-1">
+                <p className="text-sm text-white">{item.app}</p>
+                <p className="text-xs" style={{ color: '#71717a' }}>{item.project}</p>
               </div>
+              <span className="text-sm font-medium" style={{ color: '#a78bfa' }}>{item.time}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-4 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <span className="text-xs" style={{ color: '#71717a' }}>Today's total</span>
+          <span className="text-lg font-bold text-white">5h 01m</span>
+        </div>
+      </div>
+    );
+  }
 
-              {/* Product Tour Panel */}
-              {showProductTour && !showWelcomeModal && (
+  if (feature === 'insights') {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-medium text-white">This Week</span>
+          <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: '#22c55e20', color: '#22c55e' }}>+12% vs last week</span>
+        </div>
+        {/* Bar Chart */}
+        <div className="flex items-end gap-2 h-32 mb-4">
+          {[65, 80, 45, 90, 75, 30, 0].map((height, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                className="w-full rounded-t"
+                style={{ height: `${height}%`, backgroundColor: i === 3 ? '#a78bfa' : '#a78bfa40' }}
+              />
+              <span className="text-xs" style={{ color: '#71717a' }}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-lg" style={{ backgroundColor: '#1a1a1f' }}>
+            <p className="text-xs mb-1" style={{ color: '#71717a' }}>Focus Time</p>
+            <p className="text-lg font-bold text-white">24h 30m</p>
+          </div>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: '#1a1a1f' }}>
+            <p className="text-xs mb-1" style={{ color: '#71717a' }}>Focus Score</p>
+            <p className="text-lg font-bold" style={{ color: '#22c55e' }}>87%</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (feature === 'billing') {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-medium text-white">Billable Hours - January</span>
+          <button className="text-xs px-2 py-1 rounded" style={{ backgroundColor: '#a78bfa20', color: '#a78bfa' }}>
+            Export →
+          </button>
+        </div>
+        <div className="space-y-3">
+          {[
+            { client: 'Acme Corp', hours: '42h', amount: '$4,200', progress: 85 },
+            { client: 'TechFlow', hours: '28h', amount: '$3,360', progress: 60 },
+            { client: 'StartupXYZ', hours: '15h', amount: '$1,500', progress: 35 }
+          ].map((item, i) => (
+            <div key={i} className="p-3 rounded-lg" style={{ backgroundColor: '#1a1a1f' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-white">{item.client}</span>
+                <span className="text-sm font-medium" style={{ color: '#22c55e' }}>{item.amount}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: '#2a2a2f' }}>
+                  <div className="h-full rounded-full" style={{ width: `${item.progress}%`, backgroundColor: '#a78bfa' }} />
+                </div>
+                <span className="text-xs" style={{ color: '#71717a' }}>{item.hours}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-4 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <span className="text-xs" style={{ color: '#71717a' }}>Total billable</span>
+          <span className="text-lg font-bold" style={{ color: '#22c55e' }}>$9,060</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (feature === 'teams') {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-medium text-white">Team Utilization</span>
+          <span className="text-xs" style={{ color: '#71717a' }}>This week</span>
+        </div>
+        <div className="space-y-3">
+          {[
+            { name: 'Sarah C.', role: 'Designer', util: 82, status: 'online' },
+            { name: 'Mike R.', role: 'Developer', util: 91, status: 'online' },
+            { name: 'Alex K.', role: 'PM', util: 68, status: 'away' },
+            { name: 'Jordan L.', role: 'Developer', util: 75, status: 'online' }
+          ].map((member, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: '#1a1a1f' }}>
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: '#a78bfa' }}>
+                  {member.name.split(' ').map(n => n[0]).join('')}
+                </div>
                 <div
-                  className="fixed right-6 top-24 w-80 rounded-lg overflow-hidden z-50"
-                  style={{ backgroundColor: '#1e1e21', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                  className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+                  style={{
+                    backgroundColor: member.status === 'online' ? '#22c55e' : '#eab308',
+                    borderColor: '#1a1a1f'
+                  }}
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-white">{member.name}</p>
+                <p className="text-xs" style={{ color: '#71717a' }}>{member.role}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium" style={{ color: member.util >= 80 ? '#22c55e' : member.util >= 65 ? '#a78bfa' : '#eab308' }}>
+                  {member.util}%
+                </p>
+                <p className="text-xs" style={{ color: '#71717a' }}>utilization</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ==========================================
+// INTERACTIVE DEMO
+// ==========================================
+function InteractiveDemo({ onGetStarted }) {
+  const [demoStep, setDemoStep] = useState(0);
+
+  const steps = [
+    {
+      title: 'Install Rize',
+      description: 'Download the desktop app. It takes 30 seconds.',
+      action: 'Download for Mac'
+    },
+    {
+      title: 'Work normally',
+      description: 'Rize runs in the background, tracking time automatically.',
+      action: 'See it tracking'
+    },
+    {
+      title: 'Review your day',
+      description: 'At end of day, see exactly where your time went.',
+      action: 'View dashboard'
+    },
+    {
+      title: 'Get insights',
+      description: 'Weekly reports show productivity trends and improvements.',
+      action: 'Start free trial'
+    }
+  ];
+
+  return (
+    <div className="px-6 py-16">
+      <div className="mx-auto" style={{ maxWidth: '800px' }}>
+        <div className="text-center mb-12">
+          <h1 className="text-3xl font-bold text-white mb-3">How Rize Works</h1>
+          <p style={{ color: '#a1a1aa' }}>See the complete workflow in 4 simple steps</p>
+        </div>
+
+        {/* Progress */}
+        <div className="flex items-center justify-center gap-2 mb-12">
+          {steps.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setDemoStep(i)}
+              className="h-2 rounded-full transition-all"
+              style={{
+                width: demoStep === i ? '32px' : '8px',
+                backgroundColor: demoStep >= i ? '#a78bfa' : '#3f3f46'
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Step Content */}
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div>
+            <span className="text-xs px-2 py-1 rounded mb-4 inline-block" style={{ backgroundColor: '#a78bfa20', color: '#a78bfa' }}>
+              Step {demoStep + 1} of {steps.length}
+            </span>
+            <h2 className="text-2xl font-semibold text-white mb-3">{steps[demoStep].title}</h2>
+            <p className="mb-6" style={{ color: '#a1a1aa' }}>{steps[demoStep].description}</p>
+            <div className="flex gap-3">
+              {demoStep < steps.length - 1 ? (
+                <button
+                  onClick={() => setDemoStep(demoStep + 1)}
+                  className="px-5 py-2.5 rounded-md text-sm font-medium"
+                  style={{ backgroundColor: '#a78bfa', color: '#fff' }}
                 >
-                  {/* Title */}
-                  <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-white">Product Tour</h3>
-                    <button
-                      onClick={() => setShowProductTour(false)}
-                      className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#71717a' }}
-                    >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Persona Selector */}
-                  <div className="px-5 pb-3">
-                    <div className="flex gap-1 p-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                      {personas.map(persona => (
-                        <button
-                          key={persona.id}
-                          onClick={() => handlePersonaChange(persona.id)}
-                          className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded text-xs font-medium transition-all"
-                          style={{
-                            backgroundColor: selectedPersona === persona.id ? 'rgba(167,139,250,0.2)' : 'transparent',
-                            color: selectedPersona === persona.id ? '#e4e4e7' : '#71717a'
-                          }}
-                        >
-                          <span className="text-xs">{persona.icon}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Progress */}
-                  <div className="px-5 pb-4">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs" style={{ color: '#71717a' }}>Progress</span>
-                      <span className="text-xs font-medium" style={{ color: '#a78bfa' }}>{Math.round(tourProgress)}%</span>
-                    </div>
-                    <div className="h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${tourProgress}%`, backgroundColor: '#a78bfa' }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tour Steps */}
-                  <div className="px-3 pb-2 max-h-64 overflow-y-auto">
-                    {tourSteps.map((step) => {
-                      const isCompleted = currentCompleted.includes(step.id);
-                      return (
-                        <button
-                          key={step.id}
-                          onClick={() => handleTourStepClick(step.id)}
-                          className="w-full flex items-center gap-3 px-2 py-2 rounded text-left transition-all"
-                          style={{
-                            backgroundColor: isCompleted ? 'rgba(167,139,250,0.08)' : 'transparent'
-                          }}
-                        >
-                          <div
-                            className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{
-                              backgroundColor: isCompleted ? '#a78bfa' : 'transparent',
-                              border: isCompleted ? 'none' : '2px solid rgba(255,255,255,0.15)'
-                            }}
-                          >
-                            {isCompleted && (
-                              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate" style={{ color: '#e4e4e7' }}>{step.title}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="px-5 py-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                    <button
-                      onClick={() => setShowEmailCapture(true)}
-                      className="px-4 py-2 rounded text-sm font-medium transition-all"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#e4e4e7' }}
-                    >
-                      Get Started Free
-                    </button>
-                  </div>
-                </div>
+                  {steps[demoStep].action} →
+                </button>
+              ) : (
+                <button
+                  onClick={onGetStarted}
+                  className="px-5 py-2.5 rounded-md text-sm font-medium"
+                  style={{ backgroundColor: '#e4e4e7', color: '#000' }}
+                >
+                  Start Free Trial →
+                </button>
+              )}
+              {demoStep > 0 && (
+                <button
+                  onClick={() => setDemoStep(demoStep - 1)}
+                  className="px-5 py-2.5 rounded-md text-sm font-medium"
+                  style={{ backgroundColor: '#1a1a1a', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
+                >
+                  ← Back
+                </button>
               )}
             </div>
           </div>
 
-          {/* Welcome Modal Overlay */}
-          {showWelcomeModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
-              <div
-                className="w-full max-w-md rounded-lg overflow-hidden"
-                style={{ backgroundColor: '#1e1e21', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
-              >
-                {/* Title */}
-                <h2 className="px-6 pt-6 pb-4 text-lg font-semibold text-white">
-                  Welcome to Rize
-                </h2>
-
-                {/* Content Group */}
-                <div className="px-6 pb-4">
-                  <p className="text-sm mb-4" style={{ color: '#71717a' }}>
-                    Select your role to personalize your experience
-                  </p>
-
-                  {/* Persona Selection */}
-                  <div className="space-y-1">
-                    {personas.map(persona => (
-                      <button
-                        key={persona.id}
-                        onClick={() => setSelectedPersona(persona.id)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all"
-                        style={{
-                          backgroundColor: selectedPersona === persona.id ? 'rgba(167,139,250,0.12)' : 'transparent'
-                        }}
-                      >
-                        <div
-                          className="w-7 h-7 rounded flex items-center justify-center text-sm flex-shrink-0"
-                          style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
-                        >
-                          {persona.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium" style={{ color: '#e4e4e7' }}>
-                            {persona.label}
-                          </p>
-                        </div>
-                        <div
-                          className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{
-                            backgroundColor: selectedPersona === persona.id ? '#a78bfa' : 'transparent',
-                            border: selectedPersona === persona.id ? 'none' : '2px solid rgba(255,255,255,0.2)'
-                          }}
-                        >
-                          {selectedPersona === persona.id && (
-                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Footer Controls */}
-                <div className="px-6 py-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                  <button
-                    onClick={handleStartExploring}
-                    className="px-4 py-2 rounded text-sm font-medium transition-all"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#e4e4e7' }}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Email Capture Modal */}
-          {showEmailCapture && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
-              onClick={() => setShowEmailCapture(false)}
-            >
-              <div
-                className="w-full max-w-md rounded-2xl p-8 relative"
-                style={{ backgroundColor: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)' }}
-                onClick={e => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => setShowEmailCapture(false)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:opacity-70"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#71717a' }}
-                >
-                  ✕
-                </button>
-
-                <div className="text-center mb-6">
-                  <div className="w-14 h-14 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(167,139,250,0.15)' }}>
-                    <span className="text-2xl">🚀</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Start Your Free Trial</h3>
-                  <p className="text-sm" style={{ color: '#71717a' }}>
-                    Join 100,000+ professionals who save 5+ hours every week
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg text-white text-sm outline-none focus:ring-2 focus:ring-purple-500"
-                    style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.15)' }}
-                  />
-
-                  <button
-                    className="w-full py-3 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: '#a78bfa', color: '#fff' }}
-                  >
-                    Get Started Free
-                  </button>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-                    <span className="text-xs" style={{ color: '#71717a' }}>or</span>
-                    <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-                  </div>
-
-                  <button
-                    className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors"
-                    style={{ backgroundColor: '#fff', color: '#111' }}
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    Continue with Google
-                  </button>
-                </div>
-
-                <p className="text-center mt-6 text-xs" style={{ color: '#71717a' }}>
-                  14-day free trial • No credit card required
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Demo Visual */}
+          <div className="rounded-xl p-6" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <DemoStepVisual step={demoStep} />
+          </div>
         </div>
-      );
-    }
+      </div>
+    </div>
+  );
+}
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+function DemoStepVisual({ step }) {
+  if (step === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-20 h-20 mx-auto rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#1a1a1f' }}>
+          <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#a78bfa' }}>
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+          </svg>
+        </div>
+        <p className="text-sm text-white mb-2">Download for Mac or Windows</p>
+        <p className="text-xs" style={{ color: '#71717a' }}>2MB • Installs in 30 seconds</p>
+      </div>
+    );
+  }
+
+  if (step === 1) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#22c55e' }} />
+          <span className="text-xs" style={{ color: '#22c55e' }}>Tracking active</span>
+        </div>
+        {[
+          { app: 'VS Code', time: '47m', active: true },
+          { app: 'Chrome - Figma', time: '12m', active: false },
+          { app: 'Slack', time: '5m', active: false }
+        ].map((item, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between p-3 rounded-lg"
+            style={{ backgroundColor: item.active ? '#a78bfa15' : '#1a1a1f', border: item.active ? '1px solid #a78bfa40' : 'none' }}
+          >
+            <span className="text-sm text-white">{item.app}</span>
+            <span className="text-sm" style={{ color: item.active ? '#a78bfa' : '#71717a' }}>{item.time}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm text-white">Today's Summary</span>
+          <span className="text-xs" style={{ color: '#71717a' }}>Jan 29</span>
+        </div>
+        <div className="flex gap-2 mb-4">
+          {['Deep Work', 'Meetings', 'Email', 'Other'].map((cat, i) => (
+            <div
+              key={i}
+              className="h-3 rounded"
+              style={{
+                flex: [4, 2, 1, 1][i],
+                backgroundColor: ['#a78bfa', '#60a5fa', '#fb923c', '#3f3f46'][i]
+              }}
+            />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: 'Total', value: '7h 24m' },
+            { label: 'Focus', value: '5h 12m' },
+            { label: 'Meetings', value: '1h 30m' },
+            { label: 'Breaks', value: '42m' }
+          ].map((item, i) => (
+            <div key={i} className="p-2 rounded" style={{ backgroundColor: '#1a1a1f' }}>
+              <p className="text-xs" style={{ color: '#71717a' }}>{item.label}</p>
+              <p className="text-sm font-medium text-white">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <div className="text-center py-4">
+        <div className="text-4xl font-bold mb-2" style={{ color: '#22c55e' }}>+23%</div>
+        <p className="text-sm text-white mb-1">Focus time improvement</p>
+        <p className="text-xs mb-6" style={{ color: '#71717a' }}>After 4 weeks with Rize</p>
+        <div className="flex justify-center gap-4">
+          {[
+            { label: 'Before', value: '3.2h/day' },
+            { label: 'After', value: '4.1h/day' }
+          ].map((item, i) => (
+            <div key={i} className="p-3 rounded-lg" style={{ backgroundColor: '#1a1a1f' }}>
+              <p className="text-xs" style={{ color: '#71717a' }}>{item.label}</p>
+              <p className="text-sm font-medium text-white">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ==========================================
+// EMAIL CAPTURE MODAL
+// ==========================================
+function EmailCaptureModal({ email, setEmail, onClose }) {
+  const [step, setStep] = useState('email'); // email, role, success
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl p-8"
+        style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.1)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
+        >
+          ✕
+        </button>
+
+        {step === 'email' && (
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-2">Start your free trial</h2>
+            <p className="text-sm mb-6" style={{ color: '#71717a' }}>14 days free. No credit card required.</p>
+
+            <input
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-md text-white text-sm outline-none mb-4"
+              style={{ backgroundColor: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)' }}
+            />
+
+            <button
+              onClick={() => setStep('role')}
+              disabled={!email}
+              className="w-full py-3 rounded-md text-sm font-medium disabled:opacity-50 mb-4"
+              style={{ backgroundColor: '#a78bfa', color: '#fff' }}
+            >
+              Continue with Email
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+              <span className="text-xs" style={{ color: '#71717a' }}>or</span>
+              <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            </div>
+
+            <button
+              className="w-full py-3 rounded-md text-sm font-medium"
+              style={{ backgroundColor: '#e4e4e7', color: '#000' }}
+            >
+              Continue with Google
+            </button>
+          </div>
+        )}
+
+        {step === 'role' && (
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-2">What describes you best?</h2>
+            <p className="text-sm mb-6" style={{ color: '#71717a' }}>We'll personalize your experience.</p>
+
+            <div className="space-y-2 mb-6">
+              {[
+                { role: 'Individual', desc: 'Personal productivity tracking' },
+                { role: 'Freelancer', desc: 'Billable hours & client tracking' },
+                { role: 'Team Lead', desc: 'Team visibility & reports' },
+                { role: 'Enterprise', desc: '6+ people, custom needs' }
+              ].map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => setStep('success')}
+                  className="w-full p-4 rounded-lg text-left transition-all hover:border-purple-400/40"
+                  style={{ backgroundColor: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  <p className="text-sm font-medium text-white">{item.role}</p>
+                  <p className="text-xs" style={{ color: '#71717a' }}>{item.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 'success' && (
+          <div className="text-center py-4">
+            <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: '#22c55e20' }}>
+              <svg className="w-8 h-8" style={{ color: '#22c55e' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2">Check your email!</h2>
+            <p className="text-sm mb-6" style={{ color: '#71717a' }}>
+              We sent a magic link to <span className="text-white">{email}</span>
+            </p>
+            <p className="text-xs" style={{ color: '#52525b' }}>
+              Click the link to download Rize and start your trial.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+    // Auto-detect and render the main component
+    const AppComponent = typeof App !== 'undefined' ? App :
+                         typeof RizeExploreProduct !== 'undefined' ? RizeExploreProduct :
+                         () => <div>No component found</div>;
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AppComponent />);
   </script>
 </body>
 </html>

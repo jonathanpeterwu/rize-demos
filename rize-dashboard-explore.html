@@ -3,628 +3,761 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rize Dashboard Explore - Pre-Signup Demo</title>
+  <title>Rize Dashboard Explore</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
-    .hover\:bg-white\/5:hover { background-color: rgba(255,255,255,0.05); }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111113;
+      font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-    function App() {
-      const [showWelcomeModal, setShowWelcomeModal] = useState(true);
-      const [showProductTour, setShowProductTour] = useState(false);
-      const [selectedPersona, setSelectedPersona] = useState('productivity');
-      const [completedSteps, setCompletedSteps] = useState({
-        productivity: ['overview'],
-        freelancer: ['overview'],
-        manager: ['overview'],
-        founder: ['overview']
-      });
-      const [showEmailCapture, setShowEmailCapture] = useState(false);
-      const [email, setEmail] = useState('');
+// Rize Dashboard Explore Product Experience
+// Pre-signup demo with CTA overlay, welcome modal, and product tour
 
-      const personas = [
-        { id: 'productivity', label: 'Productivity', icon: '⚡', color: '#a78bfa' },
-        { id: 'freelancer', label: 'IC/Freelancer', icon: '💼', color: '#60a5fa' },
-        { id: 'manager', label: 'Manager', icon: '👥', color: '#34d399' },
-        { id: 'founder', label: 'Owner/Founder', icon: '🚀', color: '#f97316' }
-      ];
+const RizeDashboardExplore = () => {
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+  const [showProductTour, setShowProductTour] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState('productivity');
+  const [completedSteps, setCompletedSteps] = useState({
+    productivity: ['overview'],
+    freelancer: ['overview'],
+    manager: ['overview'],
+    founder: ['overview']
+  });
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [email, setEmail] = useState('jonathan.x.wu@gmail.com');
 
-      const tourStepsByPersona = {
-        productivity: [
-          { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize automatically tracks your time' },
-          { id: 'focus', title: 'Focus Sessions', description: 'Block distractions and enter deep work mode' },
-          { id: 'breaks', title: 'Smart Breaks', description: 'Get reminded to take healthy breaks' },
-          { id: 'goals', title: 'Daily Goals', description: 'Set and track your productivity targets' },
-          { id: 'getstarted', title: 'Get Started with Rize', description: 'Create your account and boost productivity' }
-        ],
-        freelancer: [
-          { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize automatically tracks your time' },
-          { id: 'projects', title: 'Project Tracking', description: 'Organize time by client and project' },
-          { id: 'billable', title: 'Billable Hours', description: 'Track and export billable time accurately' },
-          { id: 'reports', title: 'Client Reports', description: 'Generate professional time reports' },
-          { id: 'getstarted', title: 'Get Started with Rize', description: 'Start tracking billable hours today' }
-        ],
-        manager: [
-          { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize tracks team productivity' },
-          { id: 'visibility', title: 'Team Visibility', description: 'See how your team spends their time' },
-          { id: 'workload', title: 'Workload Balance', description: 'Identify burnout risks and optimize capacity' },
-          { id: 'roundups', title: 'Team Round-ups', description: 'Automated weekly team productivity reports' },
-          { id: 'getstarted', title: 'Get Started with Rize', description: 'Roll out Rize to your team' }
-        ],
-        founder: [
-          { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize drives company productivity' },
-          { id: 'profitability', title: 'Profitability Dashboard', description: 'Track project margins and utilization' },
-          { id: 'clients', title: 'Client Analytics', description: 'Understand time spent per client' },
-          { id: 'insights', title: 'Company Insights', description: 'AI-powered recommendations for efficiency' },
-          { id: 'getstarted', title: 'Get Started with Rize', description: 'Transform how your company tracks time' }
-        ]
-      };
+  // Persona definitions
+  const personas = [
+    { id: 'productivity', label: 'Productivity', icon: '⚡', color: '#a78bfa' },
+    { id: 'freelancer', label: 'IC/Freelancer', icon: '💼', color: '#60a5fa' },
+    { id: 'manager', label: 'Manager', icon: '👥', color: '#34d399' },
+    { id: 'founder', label: 'Owner/Founder', icon: '🚀', color: '#f97316' }
+  ];
 
-      const tourSteps = tourStepsByPersona[selectedPersona];
-      const currentCompleted = completedSteps[selectedPersona];
-      const tourProgress = (currentCompleted.length / tourSteps.length) * 100;
+  // Persona-specific tour steps
+  const tourStepsByPersona = {
+    productivity: [
+      { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize automatically tracks your time' },
+      { id: 'focus', title: 'Focus Sessions', description: 'Block distractions and enter deep work mode' },
+      { id: 'breaks', title: 'Smart Breaks', description: 'Get reminded to take healthy breaks' },
+      { id: 'goals', title: 'Daily Goals', description: 'Set and track your productivity targets' },
+      { id: 'getstarted', title: 'Get Started with Rize', description: 'Create your account and boost productivity' }
+    ],
+    freelancer: [
+      { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize automatically tracks your time' },
+      { id: 'projects', title: 'Project Tracking', description: 'Organize time by client and project' },
+      { id: 'billable', title: 'Billable Hours', description: 'Track and export billable time accurately' },
+      { id: 'reports', title: 'Client Reports', description: 'Generate professional time reports' },
+      { id: 'getstarted', title: 'Get Started with Rize', description: 'Start tracking billable hours today' }
+    ],
+    manager: [
+      { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize tracks team productivity' },
+      { id: 'visibility', title: 'Team Visibility', description: 'See how your team spends their time' },
+      { id: 'workload', title: 'Workload Balance', description: 'Identify burnout risks and optimize capacity' },
+      { id: 'roundups', title: 'Team Round-ups', description: 'Automated weekly team productivity reports' },
+      { id: 'getstarted', title: 'Get Started with Rize', description: 'Roll out Rize to your team' }
+    ],
+    founder: [
+      { id: 'overview', title: 'Rize Overview', description: 'Learn how Rize drives company productivity' },
+      { id: 'profitability', title: 'Profitability Dashboard', description: 'Track project margins and utilization' },
+      { id: 'clients', title: 'Client Analytics', description: 'Understand time spent per client' },
+      { id: 'insights', title: 'Company Insights', description: 'AI-powered recommendations for efficiency' },
+      { id: 'getstarted', title: 'Get Started with Rize', description: 'Transform how your company tracks time' }
+    ]
+  };
 
-      const handleTourStepClick = (stepId) => {
-        if (!currentCompleted.includes(stepId)) {
-          setCompletedSteps(prev => ({
-            ...prev,
-            [selectedPersona]: [...prev[selectedPersona], stepId]
-          }));
-        }
-        if (stepId === 'getstarted') {
-          setShowEmailCapture(true);
-        }
-      };
+  const tourSteps = tourStepsByPersona[selectedPersona];
+  const currentCompleted = completedSteps[selectedPersona];
+  const tourProgress = (currentCompleted.length / tourSteps.length) * 100;
 
-      const handleStartExploring = () => {
-        setShowWelcomeModal(false);
-        setShowProductTour(true);
-      };
+  const handleTourStepClick = (stepId) => {
+    if (!currentCompleted.includes(stepId)) {
+      setCompletedSteps(prev => ({
+        ...prev,
+        [selectedPersona]: [...prev[selectedPersona], stepId]
+      }));
+    }
+    if (stepId === 'getstarted') {
+      setShowEmailCapture(true);
+    }
+  };
 
-      const categories = [
-        { name: 'Productivity', percent: 21, time: '33 min' },
-        { name: 'Miscellaneous', percent: 19, time: '29 min' },
-        { name: 'Writing', percent: 16, time: '26 min' },
-        { name: 'Finance', percent: 12, time: '19 min' },
-        { name: 'Task Management', percent: 10, time: '15 min' },
-        { name: 'Email', percent: 8, time: '12 min' },
-        { name: 'Code', percent: 4, time: '6 min' },
-        { name: 'Documenting', percent: 3, time: '5 min' },
-        { name: 'Admin', percent: 2, time: '3 min' },
-        { name: 'Messaging', percent: 1, time: '2 min' },
-        { name: 'Browsing', percent: 1, time: '2 min' }
-      ];
+  const handlePersonaChange = (personaId) => {
+    setSelectedPersona(personaId);
+  };
 
-      const apps = [
-        { name: 'Claude', percent: 17, time: '26 min' },
-        { name: 'Ghostty', percent: 17, time: '26 min' },
-        { name: 'app.clickup.com', percent: 10, time: '15 min' },
-        { name: 'app.ramp.com', percent: 8, time: '12 min' },
-        { name: 'mail.google.com', percent: 7, time: '11 min' },
-        { name: 'app.rize.io', percent: 4, time: '6 min' },
-        { name: 'docs.google.com', percent: 3, time: '5 min' },
-        { name: 'github.com', percent: 2, time: '3 min' },
-        { name: 'Rize', percent: 2, time: '2 min' },
-        { name: 'google.com', percent: 2, time: '2 min' },
-        { name: 'Slack', percent: 1, time: '2 min' }
-      ];
+  const handleStartExploring = () => {
+    setShowWelcomeModal(false);
+    setShowProductTour(true);
+  };
 
-      return (
-        <div className="min-h-screen relative" style={{ backgroundColor: '#111113', fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
-          {/* Top CTA Bar */}
-          <div className="sticky top-0 z-40 px-4 py-2.5 flex items-center justify-center gap-4" style={{ backgroundColor: '#a78bfa' }}>
-            <span className="text-sm font-medium text-white">Ready to start tracking your time?</span>
-            <button
-              onClick={() => setShowEmailCapture(true)}
-              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
-              style={{ backgroundColor: '#fff', color: '#7c3aed' }}
-            >
-              Get Started Free
+  const handleGetStarted = () => {
+    setShowEmailCapture(true);
+  };
+
+  return (
+    <div className="min-h-screen relative" style={{ backgroundColor: '#111113', fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}>
+      {/* Top CTA Bar */}
+      <div className="sticky top-0 z-40 px-4 py-2.5 flex items-center justify-center gap-4" style={{ backgroundColor: '#a78bfa' }}>
+        <span className="text-sm font-medium text-white">Ready to start tracking your time?</span>
+        <button
+          onClick={handleGetStarted}
+          className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
+          style={{ backgroundColor: '#fff', color: '#7c3aed' }}
+        >
+          Get Started Free
+        </button>
+      </div>
+
+      {/* Main Layout */}
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-56 min-h-screen flex flex-col" style={{ backgroundColor: '#0d0d0f', borderRight: '1px solid rgba(255,255,255,0.08)', opacity: showProductTour && !showWelcomeModal ? 0.6 : 1, transition: 'opacity 0.3s' }}>
+          {/* Workspace Selector */}
+          <div className="p-2">
+            <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#a1a1aa' }}>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" />
+                <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" />
+                <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" />
+              </svg>
+              <span className="truncate">Rize</span>
+              <svg className="w-4 h-4 ml-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m7 15 5 5 5-5" /><path d="m7 9 5-5 5 5" />
+              </svg>
             </button>
           </div>
 
-          {/* Main Layout */}
-          <div className="flex">
-            {/* Sidebar */}
-            <div className="w-56 min-h-screen flex flex-col" style={{ backgroundColor: '#0d0d0f', borderRight: '1px solid rgba(255,255,255,0.08)', opacity: showProductTour && !showWelcomeModal ? 0.6 : 1, transition: 'opacity 0.3s' }}>
-              {/* Workspace Selector */}
-              <div className="p-2">
-                <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#a1a1aa' }}>
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" />
-                    <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" />
-                    <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" />
-                  </svg>
-                  <span className="truncate">Rize</span>
-                  <svg className="w-4 h-4 ml-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="m7 15 5 5 5-5" /><path d="m7 9 5-5 5 5" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Navigation */}
-              <nav className="flex-1 px-2 py-2">
-                {/* Main Nav */}
-                <div className="space-y-0.5">
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#a1a1aa' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
-                    <span>Today</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>
-                    <span>Timer</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-                    <span>Activity</span>
-                  </button>
-                </div>
-
-                <div className="my-3 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
-
-                {/* Work Management */}
-                <div className="space-y-0.5">
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 2v2"/><path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M8 2v2"/><circle cx="12" cy="11" r="3"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
-                    <span>Clients</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-                    <span>Projects</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"/><path d="m9 11 3 3L22 4"/></svg>
-                    <span>Tasks</span>
-                  </button>
-                </div>
-
-                <div className="my-3 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
-
-                {/* Analytics & Reports */}
-                <div className="space-y-0.5">
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></svg>
-                    <span>Overview</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    <span>Profitability</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                    <span>Reports</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></svg>
-                    <span>Productivity</span>
-                  </button>
-                </div>
-
-                <div className="my-3 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
-
-                {/* Settings */}
-                <div className="space-y-0.5">
-                  <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <span>Settings</span>
-                  </button>
-                </div>
-              </nav>
-
-              {/* Footer */}
-              <div className="p-2 space-y-0.5 mt-auto">
-                <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></svg>
-                  <span>Account</span>
-                </button>
-                <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-                  <span>Admin</span>
-                </button>
-              </div>
-
-              {/* Bottom Nav Bar */}
-              <div className="px-2 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#22c55e' }}>
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-                        <line x1="12" y1="2" x2="12" y2="12"/>
-                      </svg>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-white">09:57</span>
-                      <span className="text-[10px]" style={{ color: '#71717a' }}>TIME SINCE<br/>LAST BREAK</span>
-                    </div>
-                  </div>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ backgroundColor: '#1f1f23', color: '#d0d0d0' }}>
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                    Start Session
-                  </button>
-                </div>
-              </div>
+          {/* Navigation */}
+          <nav className="flex-1 px-2 py-2">
+            {/* Main Nav */}
+            <div className="space-y-0.5">
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#a1a1aa' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                <span>Today</span>
+              </button>
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>
+                <span>Timer</span>
+              </button>
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                <span>Activity</span>
+              </button>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 relative">
-              {/* Product Tour Overlay */}
-              {showProductTour && !showWelcomeModal && (
-                <div
-                  className="absolute inset-0 z-40 pointer-events-none"
-                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', transition: 'opacity 0.3s' }}
-                />
-              )}
+            {/* Divider */}
+            <div className="my-3 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
 
-              {/* Activity Header */}
-              <div className="px-6 pt-4 pb-2" style={{ filter: showWelcomeModal ? 'blur(4px)' : 'none', opacity: showProductTour && !showWelcomeModal ? 0.6 : 1, transition: 'filter 0.3s, opacity 0.3s' }}>
-                <div className="flex items-center gap-2 mb-4">
-                  <svg className="w-5 h-5" style={{ color: '#a1a1aa' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
-                  </svg>
-                  <h1 className="text-lg font-semibold text-white">Activity</h1>
-                </div>
-
-                {/* Tabs */}
-                <div className="flex items-center gap-1 mb-4">
-                  <button className="px-3 py-1.5 rounded text-sm font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#e4e4e7' }}>
-                    Timeline
-                  </button>
-                  <button className="px-3 py-1.5 rounded text-sm font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    Event Log
-                  </button>
-                  <button className="px-3 py-1.5 rounded text-sm font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                    Tracking Rules
-                  </button>
-                </div>
-
-                {/* Date Navigator */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button className="w-8 h-8 rounded flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
-                    </button>
-                    <span className="text-sm font-medium text-white">Wed, Jan 29, 2025</span>
-                    <button className="w-8 h-8 rounded flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button className="px-3 py-1.5 rounded text-xs font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#e4e4e7' }}>Day</button>
-                    <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Week</button>
-                    <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Month</button>
-                    <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Year</button>
-                    <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Custom</button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Activity Content */}
-              <div className="p-6 space-y-4" style={{ filter: showWelcomeModal ? 'blur(4px)' : 'none', opacity: showProductTour && !showWelcomeModal ? 0.6 : 1, transition: 'filter 0.3s, opacity 0.3s' }}>
-                {/* Timeline Card */}
-                <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#121117', border: '1px solid #1c1b22' }}>
-                  <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #1c1b22' }}>
-                    <span className="text-sm font-medium" style={{ color: '#d0d0d0' }}>Timeline</span>
-                  </div>
-                  <div className="p-4">
-                    <div className="relative h-20">
-                      <div className="absolute inset-0 flex">
-                        {[0, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100].map((pos, i) => (
-                          <div key={i} className="absolute h-full" style={{ left: `${pos}%`, width: '1px', backgroundColor: '#2b2a30' }} />
-                        ))}
-                      </div>
-                      <div className="absolute inset-x-0 top-2 bottom-6">
-                        <div className="absolute h-full rounded-sm" style={{ left: '0%', width: '2.2%', backgroundColor: '#6851ba' }} />
-                        <div className="absolute h-full rounded-sm" style={{ left: '4%', width: '1.7%', backgroundColor: '#6851ba' }} />
-                        <div className="absolute h-full rounded-sm" style={{ left: '20%', width: '19.5%', backgroundColor: '#6851ba' }} />
-                        <div className="absolute h-full rounded-sm" style={{ left: '42%', width: '4.1%', backgroundColor: '#6851ba' }} />
-                        <div className="absolute h-full rounded-sm" style={{ left: '52%', width: '0.2%', backgroundColor: '#6851ba' }} />
-                        <div className="absolute h-full rounded-sm" style={{ left: '54%', width: '3.2%', backgroundColor: '#6851ba' }} />
-                        <div className="absolute h-full rounded-sm" style={{ left: '58%', width: '1.3%', backgroundColor: '#6851ba' }} />
-                      </div>
-                      <div className="absolute top-2 bottom-6" style={{ left: '60%', width: '2px', backgroundColor: '#a78bfa' }} />
-                      <div className="absolute bottom-0 inset-x-0 flex justify-between text-xs" style={{ color: '#7d7d7d' }}>
-                        <span>9 <small>AM</small></span>
-                        <span>10 <small>AM</small></span>
-                        <span>11 <small>AM</small></span>
-                        <span>12 <small>PM</small></span>
-                        <span>1 <small>PM</small></span>
-                        <span>2 <small>PM</small></span>
-                        <span>3 <small>PM</small></span>
-                        <span>4 <small>PM</small></span>
-                        <span>5 <small>PM</small></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-3 gap-4">
-                  {/* Pie Chart Card */}
-                  <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#121117', border: '1px solid #1c1b22' }}>
-                    <div className="px-4 py-3" style={{ borderBottom: '1px solid #1c1b22' }}>
-                      <span className="text-sm font-medium" style={{ color: '#d0d0d0' }}>Pie Chart</span>
-                    </div>
-                    <div className="p-6 flex items-center justify-center">
-                      <div className="relative">
-                        <svg height="196" width="196" style={{ display: 'block' }}>
-                          <g transform="translate(98, 98)">
-                            <circle cx="0" cy="0" r="78" fill="none" stroke="#6851ba" strokeWidth="16" strokeDasharray="122 490" strokeDashoffset="0" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="78" fill="none" stroke="#7a69c4" strokeWidth="16" strokeDasharray="88 490" strokeDashoffset="-122" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="78" fill="none" stroke="#8d7bce" strokeWidth="16" strokeDasharray="73 490" strokeDashoffset="-210" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="78" fill="none" stroke="#a08dd8" strokeWidth="16" strokeDasharray="59 490" strokeDashoffset="-283" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="78" fill="none" stroke="#b39fe2" strokeWidth="16" strokeDasharray="49 490" strokeDashoffset="-342" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="78" fill="none" stroke="#c6b1ec" strokeWidth="16" strokeDasharray="39 490" strokeDashoffset="-391" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="78" fill="none" stroke="#d9c3f6" strokeWidth="16" strokeDasharray="29 490" strokeDashoffset="-430" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="78" fill="none" stroke="#ecd5ff" strokeWidth="16" strokeDasharray="60 490" strokeDashoffset="-459" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                          </g>
-                        </svg>
-                        <svg height="148" width="148" style={{ display: 'block', position: 'absolute', top: '24px', left: '24px' }}>
-                          <g transform="translate(74, 74)">
-                            <circle cx="0" cy="0" r="54" fill="none" stroke="#6851ba" strokeWidth="12" strokeDasharray="85 340" strokeDashoffset="0" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="54" fill="none" stroke="#7a69c4" strokeWidth="12" strokeDasharray="61 340" strokeDashoffset="-85" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="54" fill="none" stroke="#8d7bce" strokeWidth="12" strokeDasharray="51 340" strokeDashoffset="-146" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="54" fill="none" stroke="#a08dd8" strokeWidth="12" strokeDasharray="41 340" strokeDashoffset="-197" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="54" fill="none" stroke="#b39fe2" strokeWidth="12" strokeDasharray="34 340" strokeDashoffset="-238" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="54" fill="none" stroke="#c6b1ec" strokeWidth="12" strokeDasharray="27 340" strokeDashoffset="-272" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                            <circle cx="0" cy="0" r="54" fill="none" stroke="#d9c3f6" strokeWidth="12" strokeDasharray="68 340" strokeDashoffset="-299" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                          </g>
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-2xl font-semibold" style={{ color: '#d0d0d0' }}>2 hr 38 min</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Categories Card */}
-                  <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#121117', border: '1px solid #1c1b22' }}>
-                    <div className="px-4 py-3" style={{ borderBottom: '1px solid #1c1b22' }}>
-                      <span className="text-sm font-medium" style={{ color: '#d0d0d0' }}>Categories</span>
-                    </div>
-                    <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '280px' }}>
-                      {categories.map((cat, i) => (
-                        <button key={i} className="w-full text-left group">
-                          <div className="grid grid-cols-[40px_1fr_auto_auto] items-center gap-2">
-                            <span className="text-xs font-medium" style={{ color: '#d0d0d0' }}>{cat.percent}%</span>
-                            <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#2b2a30' }}>
-                              <div className="h-full rounded-full" style={{ width: `${cat.percent}%`, backgroundColor: '#6851ba' }} />
-                            </div>
-                            <span className="text-xs" style={{ color: '#d0d0d0' }}>{cat.name}</span>
-                            <span className="text-xs" style={{ color: '#7d7d7d' }}>{cat.time}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Apps & Websites Card */}
-                  <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#121117', border: '1px solid #1c1b22' }}>
-                    <div className="px-4 py-3" style={{ borderBottom: '1px solid #1c1b22' }}>
-                      <span className="text-sm font-medium" style={{ color: '#d0d0d0' }}>Apps & Websites</span>
-                    </div>
-                    <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '280px' }}>
-                      {apps.map((app, i) => (
-                        <button key={i} className="w-full text-left group">
-                          <div className="grid grid-cols-[40px_1fr_auto_auto] items-center gap-2">
-                            <span className="text-xs font-medium" style={{ color: '#d0d0d0' }}>{app.percent}%</span>
-                            <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#2b2a30' }}>
-                              <div className="h-full rounded-full" style={{ width: `${app.percent}%`, backgroundColor: '#6851ba' }} />
-                            </div>
-                            <span className="text-xs" style={{ color: '#d0d0d0' }}>{app.name}</span>
-                            <span className="text-xs" style={{ color: '#7d7d7d' }}>{app.time}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Product Tour Panel */}
-              {showProductTour && !showWelcomeModal && (
-                <div className="fixed right-6 top-24 w-80 rounded-lg overflow-hidden z-50" style={{ backgroundColor: '#1e1e21', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-                  <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-white">Product Tour</h3>
-                    <button onClick={() => setShowProductTour(false)} className="w-6 h-6 rounded flex items-center justify-center transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#71717a' }}>
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div className="px-5 pb-3">
-                    <div className="flex gap-1 p-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                      {personas.map(persona => (
-                        <button
-                          key={persona.id}
-                          onClick={() => setSelectedPersona(persona.id)}
-                          className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded text-xs font-medium transition-all"
-                          style={{
-                            backgroundColor: selectedPersona === persona.id ? 'rgba(167,139,250,0.2)' : 'transparent',
-                            color: selectedPersona === persona.id ? '#e4e4e7' : '#71717a'
-                          }}
-                        >
-                          <span className="text-xs">{persona.icon}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="px-5 pb-4">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs" style={{ color: '#71717a' }}>Progress</span>
-                      <span className="text-xs font-medium" style={{ color: '#a78bfa' }}>{Math.round(tourProgress)}%</span>
-                    </div>
-                    <div className="h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${tourProgress}%`, backgroundColor: '#a78bfa' }} />
-                    </div>
-                  </div>
-
-                  <div className="px-3 pb-2 max-h-64 overflow-y-auto">
-                    {tourSteps.map((step) => {
-                      const isCompleted = currentCompleted.includes(step.id);
-                      return (
-                        <button
-                          key={step.id}
-                          onClick={() => handleTourStepClick(step.id)}
-                          className="w-full flex items-center gap-3 px-2 py-2 rounded text-left transition-all"
-                          style={{ backgroundColor: isCompleted ? 'rgba(167,139,250,0.08)' : 'transparent' }}
-                        >
-                          <div
-                            className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{
-                              backgroundColor: isCompleted ? '#a78bfa' : 'transparent',
-                              border: isCompleted ? 'none' : '2px solid rgba(255,255,255,0.15)'
-                            }}
-                          >
-                            {isCompleted && (
-                              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate" style={{ color: '#e4e4e7' }}>{step.title}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="px-5 py-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                    <button onClick={() => setShowEmailCapture(true)} className="px-4 py-2 rounded text-sm font-medium transition-all" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#e4e4e7' }}>
-                      Get Started Free
-                    </button>
-                  </div>
-                </div>
-              )}
+            {/* Work Management */}
+            <div className="space-y-0.5">
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 2v2"/><path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M8 2v2"/><circle cx="12" cy="11" r="3"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+                <span>Clients</span>
+              </button>
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                <span>Projects</span>
+              </button>
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"/><path d="m9 11 3 3L22 4"/></svg>
+                <span>Tasks</span>
+              </button>
             </div>
+
+            {/* Divider */}
+            <div className="my-3 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
+
+            {/* Analytics & Reports */}
+            <div className="space-y-0.5">
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></svg>
+                <span>Overview</span>
+              </button>
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span>Profitability</span>
+              </button>
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                <span>Reports</span>
+              </button>
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></svg>
+                <span>Productivity</span>
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="my-3 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
+
+            {/* Settings */}
+            <div className="space-y-0.5">
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>Settings</span>
+              </button>
+            </div>
+          </nav>
+
+          {/* Footer - Account & Admin */}
+          <div className="p-2 space-y-0.5 mt-auto">
+            <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></svg>
+              <span>Account</span>
+            </button>
+            <button className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-xs transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+              <span>Admin</span>
+            </button>
           </div>
 
-          {/* Welcome Modal */}
-          {showWelcomeModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
-              <div className="w-full max-w-md rounded-lg overflow-hidden" style={{ backgroundColor: '#1e1e21', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-                <h2 className="px-6 pt-6 pb-4 text-lg font-semibold text-white">Welcome to Rize</h2>
-                <div className="px-6 pb-4">
-                  <p className="text-sm mb-4" style={{ color: '#71717a' }}>Select your role to personalize your experience</p>
-                  <div className="space-y-1">
-                    {personas.map(persona => (
-                      <button
-                        key={persona.id}
-                        onClick={() => setSelectedPersona(persona.id)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all"
-                        style={{ backgroundColor: selectedPersona === persona.id ? 'rgba(167,139,250,0.12)' : 'transparent' }}
-                      >
-                        <div className="w-7 h-7 rounded flex items-center justify-center text-sm flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                          {persona.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium" style={{ color: '#e4e4e7' }}>{persona.label}</p>
-                        </div>
-                        <div
-                          className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{
-                            backgroundColor: selectedPersona === persona.id ? '#a78bfa' : 'transparent',
-                            border: selectedPersona === persona.id ? 'none' : '2px solid rgba(255,255,255,0.2)'
-                          }}
-                        >
-                          {selectedPersona === persona.id && (
-                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="px-6 py-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                  <button onClick={handleStartExploring} className="px-4 py-2 rounded text-sm font-medium transition-all" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#e4e4e7' }}>
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Global Bottom Bar */}
-          <div className="fixed bottom-0 left-0 right-0 z-30 h-10 flex items-center justify-between px-4" style={{ backgroundColor: '#0d0d0f', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <div className="w-56" />
-            <div className="flex items-center justify-center">
-              <div className="w-16 h-1 rounded-full" style={{ backgroundColor: '#3f3f46' }} />
-            </div>
+          {/* Bottom Nav Bar */}
+          <div className="px-2 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: '#1f1f23' }}>
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
+              {/* Power/Timer indicator */}
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#22c55e' }}>
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                    <line x1="12" y1="2" x2="12" y2="12"/>
+                  </svg>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-white">09:57</span>
+                  <span className="text-[10px]" style={{ color: '#71717a' }}>TIME SINCE<br/>LAST BREAK</span>
+                </div>
               </div>
-              <button className="flex items-center gap-2 px-2 py-1 text-xs" style={{ color: '#d0d0d0' }}>
-                <span>Silence</span>
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+
+              {/* Start Session Button */}
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ backgroundColor: '#1f1f23', color: '#d0d0d0' }}>
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
                 </svg>
+                Start Session
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Email Capture Modal */}
-          {showEmailCapture && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={() => setShowEmailCapture(false)}>
-              <div className="w-full max-w-md rounded-2xl p-8" style={{ backgroundColor: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)' }} onClick={e => e.stopPropagation()}>
-                <div className="text-center mb-6">
-                  <div className="w-14 h-14 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(167,139,250,0.15)' }}>
-                    <span className="text-2xl">🚀</span>
+        {/* Main Content */}
+        <div className="flex-1 relative">
+          {/* Product Tour Overlay */}
+          {showProductTour && !showWelcomeModal && (
+            <div
+              className="absolute inset-0 z-40 pointer-events-none"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                transition: 'opacity 0.3s'
+              }}
+            />
+          )}
+
+          {/* Activity Header */}
+          <div className="px-6 pt-4 pb-2" style={{ filter: showWelcomeModal ? 'blur(4px)' : 'none', opacity: showProductTour && !showWelcomeModal ? 0.6 : 1, transition: 'filter 0.3s, opacity 0.3s' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <svg className="w-5 h-5" style={{ color: '#a1a1aa' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
+              </svg>
+              <h1 className="text-lg font-semibold text-white">Activity</h1>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex items-center gap-1 mb-4">
+              <button className="px-3 py-1.5 rounded text-sm font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#e4e4e7' }}>
+                Timeline
+              </button>
+              <button className="px-3 py-1.5 rounded text-sm font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                Event Log
+              </button>
+              <button className="px-3 py-1.5 rounded text-sm font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                Tracking Rules
+              </button>
+            </div>
+
+            {/* Date Navigator */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button className="w-8 h-8 rounded flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <span className="text-sm font-medium text-white">Wed, Jan 29, 2025</span>
+                <button className="w-8 h-8 rounded flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              </div>
+              <div className="flex items-center gap-1">
+                <button className="px-3 py-1.5 rounded text-xs font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#e4e4e7' }}>Day</button>
+                <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Week</button>
+                <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Month</button>
+                <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Year</button>
+                <button className="px-3 py-1.5 rounded text-xs font-medium transition-colors hover:bg-white/5" style={{ color: '#71717a' }}>Custom</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Activity Content */}
+          <div className="p-6 space-y-4" style={{ filter: showWelcomeModal ? 'blur(4px)' : 'none', opacity: showProductTour && !showWelcomeModal ? 0.6 : 1, transition: 'filter 0.3s, opacity 0.3s' }}>
+            {/* Timeline Card */}
+            <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#121117', border: '1px solid #1c1b22' }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #1c1b22' }}>
+                <span className="text-sm font-medium" style={{ color: '#d0d0d0' }}>Timeline</span>
+              </div>
+              <div className="p-4">
+                {/* Timeline visualization */}
+                <div className="relative h-20">
+                  {/* Gridlines */}
+                  <div className="absolute inset-0 flex">
+                    {[0, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100].map((pos, i) => (
+                      <div key={i} className="absolute h-full" style={{ left: `${pos}%`, width: '1px', backgroundColor: '#2b2a30' }} />
+                    ))}
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Start Your Free Trial</h3>
-                  <p className="text-sm" style={{ color: '#71717a' }}>Join 100,000+ professionals who save 5+ hours every week</p>
+                  {/* Timeline bars container */}
+                  <div className="absolute inset-x-0 top-2 bottom-6">
+                    {/* Activity events - purple bars matching Rize */}
+                    <div className="absolute h-full rounded-sm" style={{ left: '0%', width: '2.2%', backgroundColor: '#6851ba' }} />
+                    <div className="absolute h-full rounded-sm" style={{ left: '4%', width: '1.7%', backgroundColor: '#6851ba' }} />
+                    <div className="absolute h-full rounded-sm" style={{ left: '20%', width: '19.5%', backgroundColor: '#6851ba' }} />
+                    <div className="absolute h-full rounded-sm" style={{ left: '42%', width: '4.1%', backgroundColor: '#6851ba' }} />
+                    <div className="absolute h-full rounded-sm" style={{ left: '52%', width: '0.2%', backgroundColor: '#6851ba' }} />
+                    <div className="absolute h-full rounded-sm" style={{ left: '54%', width: '3.2%', backgroundColor: '#6851ba' }} />
+                    <div className="absolute h-full rounded-sm" style={{ left: '58%', width: '1.3%', backgroundColor: '#6851ba' }} />
+                  </div>
+                  {/* Current time cursor */}
+                  <div className="absolute top-2 bottom-6" style={{ left: '60%', width: '2px', backgroundColor: '#a78bfa' }} />
+                  {/* Hour labels */}
+                  <div className="absolute bottom-0 inset-x-0 flex justify-between text-xs" style={{ color: '#7d7d7d' }}>
+                    <span>9 <small>AM</small></span>
+                    <span>10 <small>AM</small></span>
+                    <span>11 <small>AM</small></span>
+                    <span>12 <small>PM</small></span>
+                    <span>1 <small>PM</small></span>
+                    <span>2 <small>PM</small></span>
+                    <span>3 <small>PM</small></span>
+                    <span>4 <small>PM</small></span>
+                    <span>5 <small>PM</small></span>
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-lg text-white text-sm outline-none" style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.15)' }} />
-                  <button className="w-full py-3 rounded-lg text-sm font-medium" style={{ backgroundColor: '#a78bfa', color: '#fff' }}>Get Started Free</button>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-                    <span className="text-xs" style={{ color: '#71717a' }}>or</span>
-                    <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-                  </div>
-                  <button className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2" style={{ backgroundColor: '#fff', color: '#111' }}>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-4">
+              {/* Pie Chart Card */}
+              <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#121117', border: '1px solid #1c1b22' }}>
+                <div className="px-4 py-3" style={{ borderBottom: '1px solid #1c1b22' }}>
+                  <span className="text-sm font-medium" style={{ color: '#d0d0d0' }}>Pie Chart</span>
+                </div>
+                <div className="p-6 flex items-center justify-center">
+                  <div className="relative">
+                    {/* Outer ring pie chart */}
+                    <svg height="196" width="196" style={{ display: 'block' }}>
+                      <g transform="translate(98, 98)">
+                        {/* Pie segments with gradient purple shades */}
+                        <circle cx="0" cy="0" r="78" fill="none" stroke="#6851ba" strokeWidth="16" strokeDasharray="122 490" strokeDashoffset="0" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="78" fill="none" stroke="#7a69c4" strokeWidth="16" strokeDasharray="88 490" strokeDashoffset="-122" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="78" fill="none" stroke="#8d7bce" strokeWidth="16" strokeDasharray="73 490" strokeDashoffset="-210" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="78" fill="none" stroke="#a08dd8" strokeWidth="16" strokeDasharray="59 490" strokeDashoffset="-283" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="78" fill="none" stroke="#b39fe2" strokeWidth="16" strokeDasharray="49 490" strokeDashoffset="-342" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="78" fill="none" stroke="#c6b1ec" strokeWidth="16" strokeDasharray="39 490" strokeDashoffset="-391" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="78" fill="none" stroke="#d9c3f6" strokeWidth="16" strokeDasharray="29 490" strokeDashoffset="-430" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="78" fill="none" stroke="#ecd5ff" strokeWidth="16" strokeDasharray="60 490" strokeDashoffset="-459" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                      </g>
                     </svg>
-                    Continue with Google
-                  </button>
+                    {/* Inner ring pie chart */}
+                    <svg height="148" width="148" style={{ display: 'block', position: 'absolute', top: '24px', left: '24px' }}>
+                      <g transform="translate(74, 74)">
+                        <circle cx="0" cy="0" r="54" fill="none" stroke="#6851ba" strokeWidth="12" strokeDasharray="85 340" strokeDashoffset="0" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="54" fill="none" stroke="#7a69c4" strokeWidth="12" strokeDasharray="61 340" strokeDashoffset="-85" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="54" fill="none" stroke="#8d7bce" strokeWidth="12" strokeDasharray="51 340" strokeDashoffset="-146" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="54" fill="none" stroke="#a08dd8" strokeWidth="12" strokeDasharray="41 340" strokeDashoffset="-197" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="54" fill="none" stroke="#b39fe2" strokeWidth="12" strokeDasharray="34 340" strokeDashoffset="-238" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="54" fill="none" stroke="#c6b1ec" strokeWidth="12" strokeDasharray="27 340" strokeDashoffset="-272" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                        <circle cx="0" cy="0" r="54" fill="none" stroke="#d9c3f6" strokeWidth="12" strokeDasharray="68 340" strokeDashoffset="-299" style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                      </g>
+                    </svg>
+                    {/* Center text */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-semibold" style={{ color: '#d0d0d0' }}>2 hr 38 min</span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-center mt-6 text-xs" style={{ color: '#71717a' }}>14-day free trial • No credit card required</p>
+              </div>
+
+              {/* Categories Card */}
+              <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#121117', border: '1px solid #1c1b22' }}>
+                <div className="px-4 py-3" style={{ borderBottom: '1px solid #1c1b22' }}>
+                  <span className="text-sm font-medium" style={{ color: '#d0d0d0' }}>Categories</span>
+                </div>
+                <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '280px' }}>
+                  {[
+                    { name: 'Productivity', percent: 21, time: '33 min' },
+                    { name: 'Miscellaneous', percent: 19, time: '29 min' },
+                    { name: 'Writing', percent: 16, time: '26 min' },
+                    { name: 'Finance', percent: 12, time: '19 min' },
+                    { name: 'Task Management', percent: 10, time: '15 min' },
+                    { name: 'Email', percent: 8, time: '12 min' },
+                    { name: 'Code', percent: 4, time: '6 min' },
+                    { name: 'Documenting', percent: 3, time: '5 min' },
+                    { name: 'Admin', percent: 2, time: '3 min' },
+                    { name: 'Messaging', percent: 1, time: '2 min' },
+                    { name: 'Browsing', percent: 1, time: '2 min' }
+                  ].map((cat, i) => (
+                    <button key={i} className="w-full text-left group">
+                      <div className="grid grid-cols-[40px_1fr_auto_auto] items-center gap-2">
+                        <span className="text-xs font-medium" style={{ color: '#d0d0d0' }}>{cat.percent}%</span>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#2b2a30' }}>
+                          <div className="h-full rounded-full" style={{ width: `${cat.percent}%`, backgroundColor: '#6851ba' }} />
+                        </div>
+                        <span className="text-xs" style={{ color: '#d0d0d0' }}>{cat.name}</span>
+                        <span className="text-xs" style={{ color: '#7d7d7d' }}>{cat.time}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Apps & Websites Card */}
+              <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#121117', border: '1px solid #1c1b22' }}>
+                <div className="px-4 py-3" style={{ borderBottom: '1px solid #1c1b22' }}>
+                  <span className="text-sm font-medium" style={{ color: '#d0d0d0' }}>Apps & Websites</span>
+                </div>
+                <div className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: '280px' }}>
+                  {[
+                    { name: 'Claude', percent: 17, time: '26 min' },
+                    { name: 'Ghostty', percent: 17, time: '26 min' },
+                    { name: 'app.clickup.com', percent: 10, time: '15 min' },
+                    { name: 'app.ramp.com', percent: 8, time: '12 min' },
+                    { name: 'mail.google.com', percent: 7, time: '11 min' },
+                    { name: 'app.rize.io', percent: 4, time: '6 min' },
+                    { name: 'docs.google.com', percent: 3, time: '5 min' },
+                    { name: 'github.com', percent: 2, time: '3 min' },
+                    { name: 'Rize', percent: 2, time: '2 min' },
+                    { name: 'google.com', percent: 2, time: '2 min' },
+                    { name: 'Slack', percent: 1, time: '2 min' }
+                  ].map((app, i) => (
+                    <button key={i} className="w-full text-left group">
+                      <div className="grid grid-cols-[40px_1fr_auto_auto] items-center gap-2">
+                        <span className="text-xs font-medium" style={{ color: '#d0d0d0' }}>{app.percent}%</span>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#2b2a30' }}>
+                          <div className="h-full rounded-full" style={{ width: `${app.percent}%`, backgroundColor: '#6851ba' }} />
+                        </div>
+                        <span className="text-xs" style={{ color: '#d0d0d0' }}>{app.name}</span>
+                        <span className="text-xs" style={{ color: '#7d7d7d' }}>{app.time}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Product Tour Panel */}
+          {showProductTour && !showWelcomeModal && (
+            <div
+              className="fixed right-6 top-24 w-80 rounded-lg overflow-hidden z-50"
+              style={{ backgroundColor: '#1e1e21', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+            >
+              {/* Title */}
+              <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+                <h3 className="text-base font-semibold text-white">Product Tour</h3>
+                <button
+                  onClick={() => setShowProductTour(false)}
+                  className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#71717a' }}
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Persona Selector */}
+              <div className="px-5 pb-3">
+                <div className="flex gap-1 p-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                  {personas.map(persona => (
+                    <button
+                      key={persona.id}
+                      onClick={() => handlePersonaChange(persona.id)}
+                      className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded text-xs font-medium transition-all"
+                      style={{
+                        backgroundColor: selectedPersona === persona.id ? 'rgba(167,139,250,0.2)' : 'transparent',
+                        color: selectedPersona === persona.id ? '#e4e4e7' : '#71717a'
+                      }}
+                    >
+                      <span className="text-xs">{persona.icon}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div className="px-5 pb-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs" style={{ color: '#71717a' }}>Progress</span>
+                  <span className="text-xs font-medium" style={{ color: '#a78bfa' }}>{Math.round(tourProgress)}%</span>
+                </div>
+                <div className="h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${tourProgress}%`, backgroundColor: '#a78bfa' }}
+                  />
+                </div>
+              </div>
+
+              {/* Tour Steps */}
+              <div className="px-3 pb-2 max-h-64 overflow-y-auto">
+                {tourSteps.map((step) => {
+                  const isCompleted = currentCompleted.includes(step.id);
+                  return (
+                    <button
+                      key={step.id}
+                      onClick={() => handleTourStepClick(step.id)}
+                      className="w-full flex items-center gap-3 px-2 py-2 rounded text-left transition-all"
+                      style={{
+                        backgroundColor: isCompleted ? 'rgba(167,139,250,0.08)' : 'transparent'
+                      }}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: isCompleted ? '#a78bfa' : 'transparent',
+                          border: isCompleted ? 'none' : '2px solid rgba(255,255,255,0.15)'
+                        }}
+                      >
+                        {isCompleted && (
+                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: '#e4e4e7' }}>{step.title}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 py-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                <button
+                  onClick={() => setShowEmailCapture(true)}
+                  className="px-4 py-2 rounded text-sm font-medium transition-all"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#e4e4e7' }}
+                >
+                  Get Started Free
+                </button>
               </div>
             </div>
           )}
         </div>
-      );
-    }
+      </div>
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+      {/* Welcome Modal Overlay */}
+      {showWelcomeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <div
+            className="w-full max-w-md rounded-lg overflow-hidden"
+            style={{ backgroundColor: '#1e1e21', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+          >
+            {/* Title */}
+            <h2 className="px-6 pt-6 pb-4 text-lg font-semibold text-white">
+              Welcome to Rize
+            </h2>
+
+            {/* Content Group */}
+            <div className="px-6 pb-4">
+              <p className="text-sm mb-4" style={{ color: '#71717a' }}>
+                Select your role to personalize your experience
+              </p>
+
+              {/* Persona Selection */}
+              <div className="space-y-1">
+                {personas.map(persona => (
+                  <button
+                    key={persona.id}
+                    onClick={() => setSelectedPersona(persona.id)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all"
+                    style={{
+                      backgroundColor: selectedPersona === persona.id ? 'rgba(167,139,250,0.12)' : 'transparent'
+                    }}
+                  >
+                    <div
+                      className="w-7 h-7 rounded flex items-center justify-center text-sm flex-shrink-0"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                    >
+                      {persona.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: '#e4e4e7' }}>
+                        {persona.label}
+                      </p>
+                    </div>
+                    <div
+                      className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor: selectedPersona === persona.id ? '#a78bfa' : 'transparent',
+                        border: selectedPersona === persona.id ? 'none' : '2px solid rgba(255,255,255,0.2)'
+                      }}
+                    >
+                      {selectedPersona === persona.id && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer Controls */}
+            <div className="px-6 py-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+              <button
+                onClick={handleStartExploring}
+                className="px-4 py-2 rounded text-sm font-medium transition-all"
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#e4e4e7' }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 h-10 flex items-center justify-between px-4" style={{ backgroundColor: '#0d0d0f', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* Left spacer */}
+        <div className="w-56" />
+
+        {/* Center Grabber */}
+        <div className="flex items-center justify-center">
+          <div className="w-16 h-1 rounded-full" style={{ backgroundColor: '#3f3f46' }} />
+        </div>
+
+        {/* Right - Silence Control */}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: '#1f1f23' }}>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <button className="flex items-center gap-2 px-2 py-1 text-xs" style={{ color: '#d0d0d0' }}>
+            <span>Silence</span>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Email Capture Modal */}
+      {showEmailCapture && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+          onClick={() => setShowEmailCapture(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl p-8"
+            style={{ backgroundColor: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowEmailCapture(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#71717a' }}
+            >
+              ✕
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(167,139,250,0.15)' }}>
+                <span className="text-2xl">🚀</span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Start Your Free Trial</h3>
+              <p className="text-sm" style={{ color: '#71717a' }}>
+                Join 100,000+ professionals who save 5+ hours every week
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg text-white text-sm outline-none"
+                style={{ backgroundColor: '#141419', border: '1px solid rgba(255,255,255,0.15)' }}
+              />
+
+              <button
+                className="w-full py-3 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: '#a78bfa', color: '#fff' }}
+              >
+                Get Started Free
+              </button>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                <span className="text-xs" style={{ color: '#71717a' }}>or</span>
+                <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+              </div>
+
+              <button
+                className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+                style={{ backgroundColor: '#fff', color: '#111' }}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Continue with Google
+              </button>
+            </div>
+
+            <p className="text-center mt-6 text-xs" style={{ color: '#71717a' }}>
+              14-day free trial • No credit card required
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+RizeDashboardExplore;
+
+    // Auto-detect and render the main component
+    const AppComponent = typeof App !== 'undefined' ? App :
+                         typeof RizeDashboardExplore !== 'undefined' ? RizeDashboardExplore :
+                         () => <div>No component found</div>;
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AppComponent />);
   </script>
 </body>
 </html>

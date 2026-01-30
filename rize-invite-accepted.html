@@ -3,550 +3,567 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rize - Invite Accepted</title>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <title>Rize Invite Accepted</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #111113;
+      font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-    // Persona-aware Invite Accepted Page
-    function RizeInviteAccepted() {
-      // Simulated invite data - in production would come from URL params/API
-      const [inviteData, setInviteData] = useState({
-        persona: 'teams', // 'lite', 'pro', 'teams', 'enterprise'
-        inviterName: 'Sarah Chen',
-        inviterRole: 'Team Lead',
-        workspaceName: 'Acme Design Co',
-        teamSize: 8,
-        userEmail: 'johnny@example.com'
-      });
+// Persona-aware Invite Accepted Page
+// Improvements over current generic page:
+// 1. Personalized welcome based on tier (Lite/Pro/Teams/Enterprise)
+// 2. Shows who invited them (for Teams/Enterprise)
+// 3. Workspace/team context
+// 4. Persona-specific value props
+// 5. Quick-start checklist tailored to tier
+// 6. Social proof relevant to persona
 
-      const [showAllDownloads, setShowAllDownloads] = useState(false);
+function RizeInviteAccepted() {
+  // Simulated invite data - in production would come from URL params/API
+  const [inviteData] = useState({
+    persona: 'teams', // 'lite', 'pro', 'teams', 'enterprise'
+    inviterName: 'Sarah Chen',
+    inviterRole: 'Team Lead',
+    workspaceName: 'Acme Design Co',
+    teamSize: 8,
+    userEmail: 'johnny@example.com'
+  });
 
-      const personaConfig = {
-        lite: {
-          title: 'Welcome to Rize!',
-          subtitle: 'Your personal time intelligence starts now',
-          valueProps: [
-            'Automatic time tracking in the background',
-            'Daily focus score & productivity insights',
-            'Understand where your hours really go'
-          ],
-          checklist: [
-            { label: 'Download & install Rize', done: false },
-            { label: 'Grant screen recording permission', done: false },
-            { label: 'Set your first Focus Session goal', done: false }
-          ],
-          socialProof: '50,000+ professionals track their time with Rize'
-        },
-        pro: {
-          title: 'Welcome to Rize Pro!',
-          subtitle: 'Start tracking client hours accurately',
-          valueProps: [
-            'Tag time to clients & projects automatically',
-            'Generate invoicing-ready time reports',
-            'Track billable vs non-billable hours'
-          ],
-          checklist: [
-            { label: 'Download & install Rize', done: false },
-            { label: 'Add your first client project', done: false },
-            { label: 'Set up automatic project detection', done: false },
-            { label: 'Connect your calendar', done: false }
-          ],
-          socialProof: 'Trusted by 10,000+ freelancers & consultants'
-        },
-        teams: {
-          title: `Welcome to ${inviteData.workspaceName}!`,
-          subtitle: `${inviteData.inviterName} invited you to join the team`,
-          valueProps: [
-            'See how your team tracks time together',
-            'Shared categories & project tracking',
-            'Team-wide productivity insights'
-          ],
-          checklist: [
-            { label: 'Download & install Rize', done: false },
-            { label: 'Complete your profile', done: false },
-            { label: 'Review team categories', done: false },
-            { label: 'Set your weekly focus goal', done: false }
-          ],
-          socialProof: `Join ${inviteData.teamSize} team members already using Rize`
-        },
-        enterprise: {
-          title: `Welcome to ${inviteData.workspaceName}`,
-          subtitle: "Your organization's time intelligence platform",
-          valueProps: [
-            'Enterprise-grade privacy & security',
-            'Department-level insights & reporting',
-            'Seamless SSO integration'
-          ],
-          checklist: [
-            { label: 'Download & install Rize', done: false },
-            { label: 'Sign in with your company SSO', done: false },
-            { label: 'Review privacy settings', done: false },
-            { label: 'Explore your department dashboard', done: false }
-          ],
-          socialProof: 'Trusted by Fortune 500 companies worldwide'
-        }
-      };
+  const [showAllDownloads, setShowAllDownloads] = useState(false);
 
-      const config = personaConfig[inviteData.persona];
-      const isTeamInvite = inviteData.persona === 'teams' || inviteData.persona === 'enterprise';
+  const personaConfig = {
+    lite: {
+      title: 'Welcome to Rize!',
+      subtitle: 'Your personal time intelligence starts now',
+      valueProps: [
+        'Automatic time tracking in the background',
+        'Daily focus score & productivity insights',
+        'Understand where your hours really go'
+      ],
+      checklist: [
+        { label: 'Download & install Rize', done: false },
+        { label: 'Grant screen recording permission', done: false },
+        { label: 'Set your first Focus Session goal', done: false }
+      ],
+      socialProof: '50,000+ professionals track their time with Rize'
+    },
+    pro: {
+      title: 'Welcome to Rize Pro!',
+      subtitle: 'Start tracking client hours accurately',
+      valueProps: [
+        'Tag time to clients & projects automatically',
+        'Generate invoicing-ready time reports',
+        'Track billable vs non-billable hours'
+      ],
+      checklist: [
+        { label: 'Download & install Rize', done: false },
+        { label: 'Add your first client project', done: false },
+        { label: 'Set up automatic project detection', done: false },
+        { label: 'Connect your calendar', done: false }
+      ],
+      socialProof: 'Trusted by 10,000+ freelancers & consultants'
+    },
+    teams: {
+      title: `Welcome to ${inviteData.workspaceName}!`,
+      subtitle: `${inviteData.inviterName} invited you to join the team`,
+      valueProps: [
+        'See how your team tracks time together',
+        'Shared categories & project tracking',
+        'Team-wide productivity insights'
+      ],
+      checklist: [
+        { label: 'Download & install Rize', done: false },
+        { label: 'Complete your profile', done: false },
+        { label: 'Review team categories', done: false },
+        { label: 'Set your weekly focus goal', done: false }
+      ],
+      socialProof: `Join ${inviteData.teamSize} team members already using Rize`
+    },
+    enterprise: {
+      title: `Welcome to ${inviteData.workspaceName}`,
+      subtitle: 'Your organization\'s time intelligence platform',
+      valueProps: [
+        'Enterprise-grade privacy & security',
+        'Department-level insights & reporting',
+        'Seamless SSO integration'
+      ],
+      checklist: [
+        { label: 'Download & install Rize', done: false },
+        { label: 'Sign in with your company SSO', done: false },
+        { label: 'Review privacy settings', done: false },
+        { label: 'Explore your department dashboard', done: false }
+      ],
+      socialProof: 'Trusted by Fortune 500 companies worldwide'
+    }
+  };
 
-      const switchPersona = (p) => {
-        setInviteData(prev => ({ ...prev, persona: p }));
-      };
+  const config = personaConfig[inviteData.persona];
+  const isTeamInvite = inviteData.persona === 'teams' || inviteData.persona === 'enterprise';
 
-      return (
+  return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#0a0a0f',
+      fontFamily: "'Lato', -apple-system, BlinkMacSystemFont, sans-serif",
+      color: '#ffffff',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Background pattern */}
+      <div style={{
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: '40%',
+        background: 'repeating-linear-gradient(135deg, transparent, transparent 10px, rgba(104, 81, 186, 0.03) 10px, rgba(104, 81, 186, 0.03) 20px)',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Header */}
+      <header style={{
+        padding: '20px 40px',
+        borderBottom: '1px solid #1c1b22'
+      }}>
         <div style={{
-          minHeight: '100vh',
-          backgroundColor: '#0a0a0f',
-          fontFamily: "'Lato', -apple-system, BlinkMacSystemFont, sans-serif",
-          color: '#ffffff',
-          position: 'relative',
-          overflow: 'hidden'
+          fontSize: '18px',
+          letterSpacing: '4px',
+          fontWeight: 300,
+          color: '#d0d0d0'
         }}>
-          {/* Background pattern */}
+          R I Z E
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main style={{
+        maxWidth: '1000px',
+        margin: '0 auto',
+        padding: '40px 24px',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        {/* Success Badge + Title */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: '40%',
-            background: 'repeating-linear-gradient(135deg, transparent, transparent 10px, rgba(104, 81, 186, 0.03) 10px, rgba(104, 81, 186, 0.03) 20px)',
-            pointerEvents: 'none'
-          }} />
-
-          {/* Header */}
-          <header style={{
-            padding: '20px 40px',
-            borderBottom: '1px solid #1c1b22'
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '16px',
+            marginBottom: '16px'
           }}>
             <div style={{
-              fontSize: '18px',
-              letterSpacing: '4px',
-              fontWeight: 300,
-              color: '#d0d0d0'
-            }}>
-              R I Z E
-            </div>
-          </header>
-
-          {/* Main Content */}
-          <main style={{
-            maxWidth: '1000px',
-            margin: '0 auto',
-            padding: '40px 24px',
-            position: 'relative',
-            zIndex: 1
-          }}>
-            {/* Success Badge + Title */}
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '16px',
-                marginBottom: '16px'
-              }}>
-                <div style={{
-                  width: '48px',
-                  height: '32px',
-                  backgroundColor: '#22c55e',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: '16px', color: '#22c55e', fontWeight: 500 }}>Invite Accepted</span>
-              </div>
-
-              <h1 style={{
-                fontSize: '36px',
-                fontWeight: 600,
-                marginBottom: '8px',
-                color: '#ffffff'
-              }}>
-                {config.title}
-              </h1>
-
-              <p style={{ fontSize: '18px', color: '#9ca3af' }}>
-                {config.subtitle}
-              </p>
-
-              {/* Inviter Info for Teams/Enterprise */}
-              {isTeamInvite && (
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  marginTop: '20px',
-                  padding: '12px 20px',
-                  backgroundColor: '#121117',
-                  borderRadius: '12px',
-                  border: '1px solid #1c1b22'
-                }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #6851ba, #9333ea)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '16px',
-                    fontWeight: 600
-                  }}>
-                    {inviteData.inviterName.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontWeight: 500, color: '#d0d0d0' }}>{inviteData.inviterName}</div>
-                    <div style={{ fontSize: '13px', color: '#7d7d7d' }}>{inviteData.inviterRole} at {inviteData.workspaceName}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Value Props */}
-            <div style={{
+              width: '48px',
+              height: '32px',
+              backgroundColor: '#22c55e',
+              borderRadius: '6px',
               display: 'flex',
-              justifyContent: 'center',
-              gap: '32px',
-              marginBottom: '40px',
-              flexWrap: 'wrap'
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              {config.valueProps.map((prop, i) => (
-                <div key={i} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  color: '#9ca3af',
-                  fontSize: '14px'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6851ba" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  {prop}
-                </div>
-              ))}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <span style={{ fontSize: '16px', color: '#22c55e', fontWeight: 500 }}>Invite Accepted</span>
+          </div>
+
+          <h1 style={{
+            fontSize: '36px',
+            fontWeight: 600,
+            marginBottom: '8px',
+            color: '#ffffff'
+          }}>
+            {config.title}
+          </h1>
+
+          <p style={{ fontSize: '18px', color: '#9ca3af' }}>
+            {config.subtitle}
+          </p>
+
+          {/* Inviter Info for Teams/Enterprise */}
+          {isTeamInvite && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginTop: '20px',
+              padding: '12px 20px',
+              backgroundColor: '#121117',
+              borderRadius: '12px',
+              border: '1px solid #1c1b22'
+            }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6851ba, #9333ea)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px',
+                fontWeight: 600
+              }}>
+                {inviteData.inviterName.split(' ').map(n => n[0]).join('')}
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 500, color: '#d0d0d0' }}>{inviteData.inviterName}</div>
+                <div style={{ fontSize: '13px', color: '#7d7d7d' }}>{inviteData.inviterRole} at {inviteData.workspaceName}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Value Props */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '32px',
+          marginBottom: '40px',
+          flexWrap: 'wrap'
+        }}>
+          {config.valueProps.map((prop, i) => (
+            <div key={i} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              color: '#9ca3af',
+              fontSize: '14px'
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6851ba" strokeWidth="2">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              {prop}
+            </div>
+          ))}
+        </div>
+
+        {/* Main Cards Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '24px',
+          marginBottom: '32px'
+        }}>
+          {/* Download Card */}
+          <div style={{
+            backgroundColor: '#121117',
+            borderRadius: '16px',
+            border: '1px solid #1c1b22',
+            padding: '32px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '12px',
+              backgroundColor: '#1c1b22',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
             </div>
 
-            {/* Main Cards Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '24px',
-              marginBottom: '32px'
+            <h2 style={{ fontSize: '22px', fontWeight: 600, marginBottom: '8px' }}>Download Rize</h2>
+            <p style={{ color: '#7d7d7d', fontSize: '14px', marginBottom: '24px', textAlign: 'center' }}>
+              Get the native app for the best experience
+            </p>
+
+            <div style={{ fontSize: '11px', color: '#6851ba', letterSpacing: '1px', marginBottom: '12px' }}>
+              RECOMMENDED FOR YOUR DEVICE
+            </div>
+
+            <button style={{
+              width: '100%',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: '2px solid #6851ba',
+              borderRadius: '8px',
+              color: '#ffffff',
+              fontSize: '15px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              marginBottom: '12px'
             }}>
-              {/* Download Card */}
-              <div style={{
-                backgroundColor: '#121117',
-                borderRadius: '16px',
-                border: '1px solid #1c1b22',
-                padding: '32px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-              }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '12px',
-                  backgroundColor: '#1c1b22',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '20px'
-                }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+              Download for macOS (M-Chip)
+            </button>
 
-                <h2 style={{ fontSize: '22px', fontWeight: 600, marginBottom: '8px' }}>Download Rize</h2>
-                <p style={{ color: '#7d7d7d', fontSize: '14px', marginBottom: '24px', textAlign: 'center' }}>
-                  Get the native app for the best experience
-                </p>
-
-                <div style={{ fontSize: '11px', color: '#6851ba', letterSpacing: '1px', marginBottom: '12px' }}>
-                  RECOMMENDED FOR YOUR DEVICE
-                </div>
-
+            {showAllDownloads ? (
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button style={{
                   width: '100%',
-                  padding: '14px 20px',
-                  backgroundColor: 'transparent',
-                  border: '2px solid #6851ba',
+                  padding: '12px 20px',
+                  backgroundColor: '#1c1b22',
+                  border: 'none',
                   borderRadius: '8px',
-                  color: '#ffffff',
-                  fontSize: '15px',
-                  fontWeight: 500,
+                  color: '#d0d0d0',
+                  fontSize: '14px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  marginBottom: '12px'
+                  gap: '10px'
                 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                   </svg>
-                  Download for macOS (M-Chip)
+                  Download for macOS (Intel Chip)
                 </button>
-
-                {showAllDownloads ? (
-                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <button style={{
-                      width: '100%',
-                      padding: '12px 20px',
-                      backgroundColor: '#1c1b22',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#d0d0d0',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                      </svg>
-                      Download for macOS (Intel Chip)
-                    </button>
-                    <button style={{
-                      width: '100%',
-                      padding: '12px 20px',
-                      backgroundColor: '#1c1b22',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#d0d0d0',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
-                      </svg>
-                      Download for Windows
-                    </button>
-                    <button style={{
-                      width: '100%',
-                      padding: '12px 20px',
-                      backgroundColor: '#1c1b22',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#d0d0d0',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
-                      </svg>
-                      Download in Windows App Store
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowAllDownloads(true)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#6851ba',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      marginTop: '8px'
-                    }}
-                  >
-                    Show all download options
-                  </button>
-                )}
-              </div>
-
-              {/* Quick Start Checklist Card */}
-              <div style={{
-                backgroundColor: '#121117',
-                borderRadius: '16px',
-                border: '1px solid #1c1b22',
-                padding: '32px'
-              }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '12px',
+                <button style={{
+                  width: '100%',
+                  padding: '12px 20px',
                   backgroundColor: '#1c1b22',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#d0d0d0',
+                  fontSize: '14px',
+                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '20px'
+                  gap: '10px'
                 }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" strokeWidth="2">
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 5.5L1.5 4 4 1.5 5.5 3 3 5.5zm9-3L10.5 1 8 3.5 9.5 5 12 2.5zM5 9.5L3.5 8 1 10.5 2.5 12 5 9.5zm14 5L17.5 13 15 15.5 16.5 17 19 14.5zm3-9L20.5 4 18 6.5 19.5 8 22 5.5zm-9 17L11.5 21 9 23.5 10.5 25 13 22.5zM17 5.5L15.5 4 13 6.5 14.5 8 17 5.5zm-3 14L12.5 18 10 20.5 11.5 22 14 19.5z"/>
                   </svg>
-                </div>
-
-                <h2 style={{ fontSize: '22px', fontWeight: 600, marginBottom: '8px' }}>Quick Start</h2>
-                <p style={{ color: '#7d7d7d', fontSize: '14px', marginBottom: '24px' }}>
-                  Get set up in under 5 minutes
-                </p>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {config.checklist.map((item, i) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px 16px',
-                      backgroundColor: '#1c1b22',
-                      borderRadius: '8px'
-                    }}>
-                      <div style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        border: '2px solid #3f3f46',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '12px',
-                        color: '#7d7d7d'
-                      }}>
-                        {i + 1}
-                      </div>
-                      <span style={{ color: '#d0d0d0', fontSize: '14px' }}>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
+                  Download for Windows
+                </button>
+                <button style={{
+                  width: '100%',
+                  padding: '12px 20px',
+                  backgroundColor: '#1c1b22',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#d0d0d0',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 5.5L1.5 4 4 1.5 5.5 3 3 5.5zm9-3L10.5 1 8 3.5 9.5 5 12 2.5z"/>
+                  </svg>
+                  Download in Windows App Store
+                </button>
               </div>
-            </div>
+            ) : (
+              <button
+                onClick={() => setShowAllDownloads(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#6851ba',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  marginTop: '8px'
+                }}
+              >
+                Show all download options
+              </button>
+            )}
+          </div>
 
-            {/* Already have app installed - Open App */}
+          {/* Quick Start Checklist Card */}
+          <div style={{
+            backgroundColor: '#121117',
+            borderRadius: '16px',
+            border: '1px solid #1c1b22',
+            padding: '32px'
+          }}>
             <div style={{
-              backgroundColor: '#121117',
-              borderRadius: '16px',
-              border: '1px solid #1c1b22',
-              padding: '24px',
+              width: '56px',
+              height: '56px',
+              borderRadius: '12px',
+              backgroundColor: '#1c1b22',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '32px'
+              justifyContent: 'center',
+              marginBottom: '20px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  backgroundColor: '#1c1b22',
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" strokeWidth="2">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            </div>
+
+            <h2 style={{ fontSize: '22px', fontWeight: 600, marginBottom: '8px' }}>Quick Start</h2>
+            <p style={{ color: '#7d7d7d', fontSize: '14px', marginBottom: '24px' }}>
+              Get set up in under 5 minutes
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {config.checklist.map((item, i) => (
+                <div key={i} style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  gap: '12px',
+                  padding: '12px 16px',
+                  backgroundColor: '#1c1b22',
+                  borderRadius: '8px'
                 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" strokeWidth="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    border: '2px solid #3f3f46',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    color: '#7d7d7d'
+                  }}>
+                    {i + 1}
+                  </div>
+                  <span style={{ color: '#d0d0d0', fontSize: '14px' }}>{item.label}</span>
                 </div>
-                <div>
-                  <div style={{ fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>Already have Rize installed?</div>
-                  <div style={{ fontSize: '14px', color: '#7d7d7d' }}>Launch directly in your installed app</div>
-                </div>
-              </div>
-              <button style={{
-                padding: '12px 24px',
-                backgroundColor: '#6851ba',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#ffffff',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-                Open Rize App
-              </button>
+              ))}
             </div>
-
-            {/* Social Proof */}
-            <div style={{ textAlign: 'center', color: '#7d7d7d', fontSize: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <div style={{ display: 'flex' }}>
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="#fbbf24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                  ))}
-                </div>
-                <span style={{ marginLeft: '8px' }}>{config.socialProof}</span>
-              </div>
-            </div>
-
-            {/* Persona Switcher - Demo Only */}
-            <div style={{
-              position: 'fixed',
-              bottom: '20px',
-              right: '20px',
-              backgroundColor: '#1c1b22',
-              borderRadius: '8px',
-              padding: '12px',
-              border: '1px solid #2b2a30',
-              fontSize: '12px'
-            }}>
-              <div style={{ color: '#7d7d7d', marginBottom: '8px' }}>Demo: Switch Persona</div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {['lite', 'pro', 'teams', 'enterprise'].map(p => (
-                  <button
-                    key={p}
-                    onClick={() => switchPersona(p)}
-                    style={{
-                      padding: '6px 10px',
-                      backgroundColor: inviteData.persona === p ? '#6851ba' : '#121117',
-                      border: '1px solid #2b2a30',
-                      borderRadius: '4px',
-                      color: '#d0d0d0',
-                      fontSize: '11px',
-                      cursor: 'pointer',
-                      textTransform: 'capitalize'
-                    }}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </main>
+          </div>
         </div>
-      );
-    }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<RizeInviteAccepted />);
+        {/* Already have app installed - Open App */}
+        <div style={{
+          backgroundColor: '#121117',
+          borderRadius: '16px',
+          border: '1px solid #1c1b22',
+          padding: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '32px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              backgroundColor: '#1c1b22',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d0d0d0" strokeWidth="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>Already have Rize installed?</div>
+              <div style={{ fontSize: '14px', color: '#7d7d7d' }}>Launch directly in your installed app</div>
+            </div>
+          </div>
+          <button style={{
+            padding: '12px 24px',
+            backgroundColor: '#6851ba',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#ffffff',
+            fontSize: '14px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+            Open Rize App
+          </button>
+        </div>
+
+        {/* Social Proof */}
+        <div style={{ textAlign: 'center', color: '#7d7d7d', fontSize: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex' }}>
+              {[...Array(5)].map((_, i) => (
+                <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="#fbbf24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              ))}
+            </div>
+            <span style={{ marginLeft: '8px' }}>{config.socialProof}</span>
+          </div>
+        </div>
+
+        {/* Persona Switcher - Demo Only */}
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          backgroundColor: '#1c1b22',
+          borderRadius: '8px',
+          padding: '12px',
+          border: '1px solid #2b2a30',
+          fontSize: '12px'
+        }}>
+          <div style={{ color: '#7d7d7d', marginBottom: '8px' }}>Demo: Switch Persona</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {['lite', 'pro', 'teams', 'enterprise'].map(p => (
+              <button
+                key={p}
+                onClick={() => window.location.reload()}
+                style={{
+                  padding: '6px 10px',
+                  backgroundColor: inviteData.persona === p ? '#6851ba' : '#121117',
+                  border: '1px solid #2b2a30',
+                  borderRadius: '4px',
+                  color: '#d0d0d0',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  textTransform: 'capitalize'
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+    // Auto-detect and render the main component
+    const AppComponent = typeof App !== 'undefined' ? App :
+                         typeof RizeInviteAccepted !== 'undefined' ? RizeInviteAccepted :
+                         () => <div>No component found</div>;
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AppComponent />);
   </script>
 </body>
 </html>
